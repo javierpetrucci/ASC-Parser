@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LTSpice Modern Renderer</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- jsPDF loaded for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Shared Engine Scripts -->
+    <script src="../engine/parser.js"></script>
+    <script src="../engine/analyzer.js"></script>
+    <script src="../engine/pdf_renderer.js"></script>
+    <script src="../engine/index.js"></script>
+    
+    <!-- Web Interface Script -->
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <!-- Global Drag/Drop Overlay -->
+    <div id="drop-overlay">
+        <div class="drop-message">Drop .asc schematic anywhere to render directly to PDF</div>
+    </div>
+    
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <h2>LTSpice Renderer</h2>
+                <div class="subtitle">Pure Vector PDF Generation</div>
+            </div>
+            
+            <div class="menu-area">
+                <button id="download-btn" class="primary-btn" disabled>
+                    Download PDF
+                </button>
+            </div>
+            
+            <div class="options-area" style="padding: 1rem; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem;">
+                <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.9rem; color: var(--text-color);">
+                    Skin Profile
+                    <select id="skin-selector" style="padding: 0.25rem; border-radius: 4px; border: 1px solid var(--border-color); background: var(--panel-bg); color: var(--text-color); cursor: pointer;">
+                        <option value="Default">Default</option>
+                    </select>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: var(--text-color); cursor: pointer; margin-top: 0.5rem;">
+                    <input type="checkbox" id="opt-canvas-rect">
+                    Canvas based on drawn rectangle
+                </label>
+            </div>
+            
+            <div class="drag-hint">
+                <div class="hint-icon">📄</div>
+                <p>Drag & drop your .asc file anywhere on the screen</p>
+                <input type="file" id="file-input" accept=".asc" style="display: none;">
+                <button id="browse-btn" class="secondary-btn">or Browse Files...</button>
+            </div>
+        </aside>
+
+        <!-- Main PDF Viewer Area -->
+        <main class="viewer-pane">
+            <div id="welcome-msg">
+                <div class="landing-icon">⚡</div>
+                <h3>Ready to Render</h3>
+                <p>Load an LTSpice (.asc) schematic to instantly generate an infinite-zoom vector PDF.</p>
+            </div>
+            <div id="pdf-container">
+                <!-- <object id="pdf-viewer" type="application/pdf"> will be injected here -->
+            </div>
+        </main>
+    </div>
+</body>
+</html>
