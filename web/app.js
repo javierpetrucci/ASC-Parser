@@ -107,6 +107,9 @@ function arrayBufferToBase64(buffer) {
     return window.btoa(binary);
 }
 
+// Cache-buster: changes each page load so browsers always fetch fresh assets
+const ASSET_VERSION = `?v=${Date.now()}`;
+
 // Ensure the font is loaded as base64 and SVGs are fetched dynamically based on parsed symbols
 async function prepareAssets(scene) {
     const assets = {
@@ -117,7 +120,7 @@ async function prepareAssets(scene) {
     // Load Font once
     if (!window.cachedFontBase64) {
         try {
-            const fontRes = await fetch('../Assets/Fonts/lmroman10-regular.ttf');
+            const fontRes = await fetch(`../Assets/Fonts/lmroman10-regular.ttf${ASSET_VERSION}`);
             if (fontRes.ok) {
                 const buffer = await fontRes.arrayBuffer();
                 window.cachedFontBase64 = arrayBufferToBase64(buffer);
@@ -143,7 +146,7 @@ async function prepareAssets(scene) {
     
     const promises = Array.from(neededTypes).map(async (type) => {
         try {
-            const res = await fetch(`../Assets/Skins/${selectedSkin}/${type}.svg`);
+            const res = await fetch(`../Assets/Skins/${selectedSkin}/${type}.svg${ASSET_VERSION}`);
             if (res.ok) {
                 const text = await res.text();
                 assets.svgStrings.set(type, text);

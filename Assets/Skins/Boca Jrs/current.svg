@@ -8,29 +8,34 @@
       }
 
       .st0, .st1, .st2, .st3 {
-        stroke: #000;
         stroke-linecap: round;
         stroke-linejoin: round;
       }
 
-      .st1, .st2 {
+      .st0, .st2 {
+        fill: #fff;
+        stroke: #fff;
+      }
+
+      .st1, .st3 {
         fill: none;
+        stroke: #000;
+      }
+
+      .st2 {
+        stroke-width: .5px;
       }
 
       .st4 {
         fill: #f3b229;
       }
 
-      .st2 {
+      .st3 {
         stroke-width: 1.5px;
       }
 
       .st5 {
         fill: #103f79;
-      }
-
-      .st3 {
-        stroke-width: .5px;
       }
     </style>
   </defs>
@@ -38,11 +43,11 @@
     <path class="st5" d="M-29,40C-29,23.98-16.02,11,0,11s29,12.98,29,29H-29Z"/>
     <path class="st4" d="M29,40c0,16.02-12.98,29-29,29s-29-12.98-29-29H29Z"/>
   </g>
-  <line class="st2" y1="0" y2="11"/>
-  <line class="st2" y1="69" y2="80"/>
-  <circle class="st2" cy="40" r="29"/>
+  <line class="st3" y1="0" y2="11"/>
+  <line class="st3" y1="69" y2="80"/>
+  <circle class="st3" cy="40" r="29"/>
   <g>
-    <polygon class="st3" points="-3.7 43.2 0 57 3.7 43.2 -3.7 43.2"/>
+    <polygon class="st2" points="-3.7 43.2 0 57 3.7 43.2 -3.7 43.2"/>
     <g>
       <line class="st1" y1="23.7" y2="43.2"/>
       <rect class="st0" x="-.5" y="23.2" width="1" height="20.5"/>

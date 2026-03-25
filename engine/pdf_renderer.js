@@ -329,7 +329,7 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
     // Execute the final draw call for a built path
     const executeDraw = (mode) => {
         if (mode === 'FD-stroke') doc.fillStroke();
-        else if (mode === 'F-only') doc.fill('evenodd');
+        else if (mode === 'F-only') doc.fill();
         else doc.stroke();
     };
 
@@ -404,13 +404,20 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                 while ((tMatch = regex.exec(dMatch[1]))) {
                     tokens.push(tMatch[0]);
                 }
-                
+
+                // Accumulate all points for this path (absolute PDF coords)
                 let curX = 0, curY = 0;
                 let startX = 0, startY = 0;
                 let pathStarted = false;
                 let lastCp2X = null, lastCp2Y = null;
-                let pathHasZ = false; 
+                let pathHasZ = false;
+                const pathPoints = []; // absolute {x, y} PDF points
                 let i = 0;
+
+                const addPoint = (svgX, svgY) => {
+                    const p = transformPoint(svgX, svgY);
+                    pathPoints.push(p);
+                };
 
                 while (i < tokens.length) {
                     const cmd = tokens[i++];
@@ -424,16 +431,13 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                         curX = absX; curY = absY;
                         startX = curX; startY = curY;
                         pathStarted = true;
-                        const p = transformPoint(curX, curY);
-                        doc.moveTo(p.x, p.y);
-
+                        addPoint(curX, curY);
                         while (i + 1 < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
                             const extraX = parseFloat(tokens[i++]);
                             const extraY = parseFloat(tokens[i++]);
                             const ax = (cmd === 'm' ? curX + extraX : extraX) || 0;
                             const ay = (cmd === 'm' ? curY + extraY : extraY) || 0;
-                            const p2 = transformPoint(ax, ay);
-                            doc.lineTo(p2.x, p2.y);
+                            addPoint(ax, ay);
                             curX = ax; curY = ay;
                         }
                     } else if (cmd === 'L' || cmd === 'l') {
@@ -442,30 +446,21 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                             const ny = parseFloat(tokens[i++]);
                             const absX = (cmd === 'l' ? curX + nx : nx) || 0;
                             const absY = (cmd === 'l' ? curY + ny : ny) || 0;
-                            if (pathStarted) {
-                                const p2 = transformPoint(absX, absY);
-                                doc.lineTo(p2.x, p2.y);
-                            }
+                            if (pathStarted) addPoint(absX, absY);
                             curX = absX; curY = absY;
                         }
                     } else if (cmd === 'H' || cmd === 'h') {
                         while (i < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
                             const nx = parseFloat(tokens[i++]);
                             const absX = (cmd === 'h' ? curX + nx : nx) || 0;
-                            if (pathStarted) {
-                                const p2 = transformPoint(absX, curY);
-                                doc.lineTo(p2.x, p2.y);
-                            }
+                            if (pathStarted) addPoint(absX, curY);
                             curX = absX;
                         }
                     } else if (cmd === 'V' || cmd === 'v') {
                         while (i < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
                             const ny = parseFloat(tokens[i++]);
                             const absY = (cmd === 'v' ? curY + ny : ny) || 0;
-                            if (pathStarted) {
-                                const p2 = transformPoint(curX, absY);
-                                doc.lineTo(p2.x, p2.y);
-                            }
+                            if (pathStarted) addPoint(curX, absY);
                             curY = absY;
                         }
                     } else if (cmd === 'C' || cmd === 'c') {
@@ -478,16 +473,13 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                             const cp2y = parseFloat(tokens[i++]) + (isRel ? curY : 0);
                             const ex = parseFloat(tokens[i++]) + (isRel ? curX : 0);
                             const ey = parseFloat(tokens[i++]) + (isRel ? curY : 0);
-                            const STEPS = 8;
+                            const STEPS = 12;
                             for (let step = 1; step <= STEPS; step++) {
                                 const t = step / STEPS;
                                 const mt = 1 - t;
-                                const cx = mt*mt*mt*curX + 3*mt*mt*t*cp1x + 3*mt*t*t*cp2x + t*t*t*ex;
-                                const cy = mt*mt*mt*curY + 3*mt*mt*t*cp1y + 3*mt*t*t*cp2y + t*t*t*ey;
-                                if (pathStarted) {
-                                    const p2 = transformPoint(cx, cy);
-                                    doc.lineTo(p2.x, p2.y);
-                                }
+                                const bx = mt*mt*mt*curX + 3*mt*mt*t*cp1x + 3*mt*t*t*cp2x + t*t*t*ex;
+                                const by = mt*mt*mt*curY + 3*mt*mt*t*cp1y + 3*mt*t*t*cp2y + t*t*t*ey;
+                                if (pathStarted) addPoint(bx, by);
                             }
                             curX = ex; curY = ey;
                             lastCp2X = cp2x; lastCp2Y = cp2y;
@@ -505,33 +497,37 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                             const cp2y = parseFloat(tokens[i++]) + (isRel ? curY : 0);
                             const ex = parseFloat(tokens[i++]) + (isRel ? curX : 0);
                             const ey = parseFloat(tokens[i++]) + (isRel ? curY : 0);
-                            const STEPS = 8;
+                            const STEPS = 12;
                             for (let step = 1; step <= STEPS; step++) {
                                 const t = step / STEPS;
                                 const mt = 1 - t;
-                                const cx = mt*mt*mt*curX + 3*mt*mt*t*cp1x + 3*mt*t*t*cp2x + t*t*t*ex;
-                                const cy = mt*mt*mt*curY + 3*mt*mt*t*cp1y + 3*mt*t*t*cp2y + t*t*t*ey;
-                                if (pathStarted) {
-                                    const p2 = transformPoint(cx, cy);
-                                    doc.lineTo(p2.x, p2.y);
-                                }
+                                const bx = mt*mt*mt*curX + 3*mt*mt*t*cp1x + 3*mt*t*t*cp2x + t*t*t*ex;
+                                const by = mt*mt*mt*curY + 3*mt*mt*t*cp1y + 3*mt*t*t*cp2y + t*t*t*ey;
+                                if (pathStarted) addPoint(bx, by);
                             }
                             curX = ex; curY = ey;
                             lastCp2X = cp2x; lastCp2Y = cp2y;
                         }
                     } else if (cmd === 'Z' || cmd === 'z') {
                         pathHasZ = true;
-                        if (pathStarted) {
-                            const p2 = transformPoint(startX, startY);
-                            doc.lineTo(p2.x, p2.y);
-                        }
                         curX = startX; curY = startY;
                     }
                     if (!isCurveCommand) { lastCp2X = null; lastCp2Y = null; }
                 }
-                if (pathStarted) {
+
+                if (pathStarted && pathPoints.length > 1) {
                     const mode = resolveDrawMode(fill, hasStroke, pathHasZ);
-                    executeDraw(mode);
+                    const lStyle = mode === 'FD-stroke' ? 'FD' : mode === 'F-only' ? 'F' : 'S';
+                    const start = pathPoints[0];
+                    const segments = [];
+                    for (let j = 1; j < pathPoints.length; j++) {
+                        segments.push([pathPoints[j].x - pathPoints[j-1].x, pathPoints[j].y - pathPoints[j-1].y]);
+                    }
+                    // Close the path for filled shapes
+                    if (pathHasZ) {
+                        segments.push([start.x - pathPoints[pathPoints.length-1].x, start.y - pathPoints[pathPoints.length-1].y]);
+                    }
+                    doc.lines(segments, start.x, start.y, [1,1], lStyle, pathHasZ);
                 }
             }
         }
