@@ -333,213 +333,207 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
         else doc.stroke();
     };
 
-    // 3. Draw Primitives
-    // RECTANGLE
-    for (const m of svgText.matchAll(/<rect[^>]*>/g)) {
-        const { fill, hasStroke } = applySvgStyle(m[0]);
-        const mode = resolveDrawMode(fill, hasStroke, true); // rect is always closed
-        // Map mode to doc.lines style string
-        const lStyle = mode === 'FD-stroke' ? 'FD' : mode === 'F-only' ? 'F' : 'S';
-        const rx = parseFloat((m[0].match(/x="(-?[\d.]+)"/) || [])[1] ?? 0);
-        const ry = parseFloat((m[0].match(/y="(-?[\d.]+)"/) || [])[1] ?? 0);
-        const rw = parseFloat((m[0].match(/width="(-?[\d.]+)"/) || [])[1] ?? 0);
-        const rh = parseFloat((m[0].match(/height="(-?[\d.]+)"/) || [])[1] ?? 0);
-        
-        const p1 = transformPoint(rx, ry);
-        const p2 = transformPoint(rx + rw, ry);
-        const p3 = transformPoint(rx + rw, ry + rh);
-        const p4 = transformPoint(rx, ry + rh);
-        doc.lines([[p2.x-p1.x, p2.y-p1.y], [p3.x-p2.x, p3.y-p2.y], [p4.x-p3.x, p4.y-p3.y], [p1.x-p4.x, p1.y-p4.y]], p1.x, p1.y, [1,1], lStyle);
-    }
+    // 3. Draw Elements in Order (Painter's Model)
+    const elementRegex = /<(rect|line|circle|path|polygon|polyline)[^>]*>/g;
+    for (const m of svgText.matchAll(elementRegex)) {
+        const fullTag = m[0];
+        const tagName = m[1];
 
-    // LINE
-    for (const m of svgText.matchAll(/<line[^>]*>/g)) {
-        applySvgStyle(m[0]);
-        const x1 = parseFloat((m[0].match(/x1="(-?[\d.]+)"/) || [])[1] ?? 0);
-        const y1 = parseFloat((m[0].match(/y1="(-?[\d.]+)"/) || [])[1] ?? 0);
-        const x2 = parseFloat((m[0].match(/x2="(-?[\d.]+)"/) || [])[1] ?? 0);
-        const y2 = parseFloat((m[0].match(/y2="(-?[\d.]+)"/) || [])[1] ?? 0);
-        const p1 = transformPoint(x1, y1);
-        const p2 = transformPoint(x2, y2);
-        doc.line(p1.x, p1.y, p2.x, p2.y);
-    }
-
-    // CIRCLE
-    for (const m of svgText.matchAll(/<circle[^>]*>/g)) {
-        const { fill, hasStroke } = applySvgStyle(m[0]);
-        const mode = resolveDrawMode(fill, hasStroke, true); // circle is always closed
-        const ellipseStyle = mode === 'FD-stroke' ? 'FD' : mode === 'F-only' ? 'F' : 'S';
-        const cx = parseFloat((m[0].match(/cx="(-?[\d.]+)"/) || [])[1] ?? 0);
-        const cy = parseFloat((m[0].match(/cy="(-?[\d.]+)"/) || [])[1] ?? 0);
-        const r = parseFloat((m[0].match(/r="(-?[\d.]+)"/) || [])[1] ?? 0);
-        const cCenter = transformPoint(cx, cy);
-        doc.ellipse(cCenter.x, cCenter.y, r, r, ellipseStyle);
-    }
-
-    // POLYGON & POLYLINE
-    for (const m of svgText.matchAll(/<(polygon|polyline)[^>]*points="([^"]+)"[^>]*>/g)) {
-        const { fill, hasStroke } = applySvgStyle(m[0]);
-        const isClosed = m[1] === 'polygon';
-        const mode = resolveDrawMode(fill, hasStroke, isClosed);
-        const lStyle = mode === 'FD-stroke' ? 'FD' : mode === 'F-only' ? 'F' : 'S';
-        const nums = m[2].trim().split(/[\s,]+/).map(Number);
-        const pts = [];
-        for (let i = 0; i < nums.length; i += 2) {
-            pts.push(transformPoint(nums[i], nums[i+1]));
-        }
-        if (pts.length > 1) {
-            const start = pts[0];
-            const lines = [];
-            for (let i = 1; i < pts.length; i++) {
-                lines.push([pts[i].x - pts[i-1].x, pts[i].y - pts[i-1].y]);
+        if (tagName === 'rect') {
+            const { fill, hasStroke } = applySvgStyle(fullTag);
+            const mode = resolveDrawMode(fill, hasStroke, true);
+            const lStyle = mode === 'FD-stroke' ? 'FD' : mode === 'F-only' ? 'F' : 'S';
+            const rx = parseFloat((fullTag.match(/x="(-?[\d.]+)"/) || [])[1] ?? 0);
+            const ry = parseFloat((fullTag.match(/y="(-?[\d.]+)"/) || [])[1] ?? 0);
+            const rw = parseFloat((fullTag.match(/width="(-?[\d.]+)"/) || [])[1] ?? 0);
+            const rh = parseFloat((fullTag.match(/height="(-?[\d.]+)"/) || [])[1] ?? 0);
+            const p1 = transformPoint(rx, ry);
+            const p2 = transformPoint(rx + rw, ry);
+            const p3 = transformPoint(rx + rw, ry + rh);
+            const p4 = transformPoint(rx, ry + rh);
+            doc.lines([[p2.x-p1.x, p2.y-p1.y], [p3.x-p2.x, p3.y-p2.y], [p4.x-p3.x, p4.y-p3.y], [p1.x-p4.x, p1.y-p4.y]], p1.x, p1.y, [1,1], lStyle);
+        } else if (tagName === 'line') {
+            applySvgStyle(fullTag);
+            const x1 = parseFloat((fullTag.match(/x1="(-?[\d.]+)"/) || [])[1] ?? 0);
+            const y1 = parseFloat((fullTag.match(/y1="(-?[\d.]+)"/) || [])[1] ?? 0);
+            const x2 = parseFloat((fullTag.match(/x2="(-?[\d.]+)"/) || [])[1] ?? 0);
+            const y2 = parseFloat((fullTag.match(/y2="(-?[\d.]+)"/) || [])[1] ?? 0);
+            const p1 = transformPoint(x1, y1);
+            const p2 = transformPoint(x2, y2);
+            doc.line(p1.x, p1.y, p2.x, p2.y);
+        } else if (tagName === 'circle') {
+            const { fill, hasStroke } = applySvgStyle(fullTag);
+            const mode = resolveDrawMode(fill, hasStroke, true);
+            const ellipseStyle = mode === 'FD-stroke' ? 'FD' : mode === 'F-only' ? 'F' : 'S';
+            const cx = parseFloat((fullTag.match(/cx="(-?[\d.]+)"/) || [])[1] ?? 0);
+            const cy = parseFloat((fullTag.match(/cy="(-?[\d.]+)"/) || [])[1] ?? 0);
+            const r = parseFloat((fullTag.match(/r="(-?[\d.]+)"/) || [])[1] ?? 0);
+            const cCenter = transformPoint(cx, cy);
+            doc.ellipse(cCenter.x, cCenter.y, r, r, ellipseStyle);
+        } else if (tagName === 'polygon' || tagName === 'polyline') {
+            const { fill, hasStroke } = applySvgStyle(fullTag);
+            const isClosed = tagName === 'polygon';
+            const mode = resolveDrawMode(fill, hasStroke, isClosed);
+            const lStyle = mode === 'FD-stroke' ? 'FD' : mode === 'F-only' ? 'F' : 'S';
+            const ptsMatch = fullTag.match(/points="([^"]+)"/);
+            if (ptsMatch) {
+                const nums = ptsMatch[1].trim().split(/[\s,]+/).map(Number);
+                const pts = [];
+                for (let i = 0; i < nums.length; i += 2) {
+                    pts.push(transformPoint(nums[i], nums[i+1]));
+                }
+                if (pts.length > 1) {
+                    const start = pts[0];
+                    const lines = [];
+                    for (let i = 1; i < pts.length; i++) {
+                        lines.push([pts[i].x - pts[i-1].x, pts[i].y - pts[i-1].y]);
+                    }
+                    if (isClosed) {
+                        lines.push([start.x - pts[pts.length-1].x, start.y - pts[pts.length-1].y]);
+                    }
+                    doc.lines(lines, start.x, start.y, [1,1], lStyle);
+                }
             }
-            if (isClosed) {
-                lines.push([start.x - pts[pts.length-1].x, start.y - pts[pts.length-1].y]);
-            }
-            doc.lines(lines, start.x, start.y, [1,1], lStyle);
-        }
-    }
-
-    // PATH (polygonal approximation for pure JS vector safety)
-    for (const m of svgText.matchAll(/<path[^>]*d="([^"]+)"[^>]*>/g)) {
-        const { fill, hasStroke } = applySvgStyle(m[0]);
-        const tokens = [];
-        // Support scientific notation, negative numbers, and implicit decimal-point delimiting (e.g. "1.3.7" -> "1.3", ".7")
-        const regex = /([A-Za-z])|(-?(?:\d*\.\d+|\d+)(?:[eE][-+]?\d+)?)/g;
-        let match;
-        while ((match = regex.exec(m[1]))) {
-            tokens.push(match[0]);
-        }
-        
-        let curX = 0, curY = 0;
-        let startX = 0, startY = 0;
-        let pathStarted = false;
-        let lastCp2X = null, lastCp2Y = null;
-        let pathHasZ = false; // track if path explicitly closes itself
-        let i = 0;
-
-        while (i < tokens.length) {
-            const cmd = tokens[i++];
-            let isCurveCommand = false;
-
-            if (cmd === 'M' || cmd === 'm') {
-                const nx = parseFloat(tokens[i++]);
-                const ny = parseFloat(tokens[i++]);
-                const absX = (cmd === 'm' ? curX + nx : nx) || 0;
-                const absY = (cmd === 'm' ? curY + ny : ny) || 0;
-                curX = absX; curY = absY;
-                startX = curX; startY = curY;
-                pathStarted = true;
-                const p = transformPoint(curX, curY);
-                doc.moveTo(p.x, p.y);
-
-                while (i + 1 < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
-                    const extraX = parseFloat(tokens[i++]);
-                    const extraY = parseFloat(tokens[i++]);
-                    const ax = (cmd === 'm' ? curX + extraX : extraX) || 0;
-                    const ay = (cmd === 'm' ? curY + extraY : extraY) || 0;
-                    const p2 = transformPoint(ax, ay);
-                    doc.lineTo(p2.x, p2.y);
-                    curX = ax; curY = ay;
+        } else if (tagName === 'path') {
+            const { fill, hasStroke } = applySvgStyle(fullTag);
+            const dMatch = fullTag.match(/d="([^"]+)"/);
+            if (dMatch) {
+                const tokens = [];
+                const regex = /([A-Za-z])|(-?(?:\d*\.\d+|\d+)(?:[eE][-+]?\d+)?)/g;
+                let tMatch;
+                while ((tMatch = regex.exec(dMatch[1]))) {
+                    tokens.push(tMatch[0]);
                 }
-            } else if (cmd === 'L' || cmd === 'l') {
-                while (i + 1 < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
-                    const nx = parseFloat(tokens[i++]);
-                    const ny = parseFloat(tokens[i++]);
-                    const absX = (cmd === 'l' ? curX + nx : nx) || 0;
-                    const absY = (cmd === 'l' ? curY + ny : ny) || 0;
-                    if (pathStarted) {
-                        const p2 = transformPoint(absX, absY);
-                        doc.lineTo(p2.x, p2.y);
-                    }
-                    curX = absX; curY = absY;
-                }
-            } else if (cmd === 'H' || cmd === 'h') {
-                while (i < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
-                    const nx = parseFloat(tokens[i++]);
-                    const absX = (cmd === 'h' ? curX + nx : nx) || 0;
-                    if (pathStarted) {
-                        const p2 = transformPoint(absX, curY);
-                        doc.lineTo(p2.x, p2.y);
-                    }
-                    curX = absX;
-                }
-            } else if (cmd === 'V' || cmd === 'v') {
-                while (i < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
-                    const ny = parseFloat(tokens[i++]);
-                    const absY = (cmd === 'v' ? curY + ny : ny) || 0;
-                    if (pathStarted) {
-                        const p2 = transformPoint(curX, absY);
-                        doc.lineTo(p2.x, p2.y);
-                    }
-                    curY = absY;
-                }
-            } else if (cmd === 'C' || cmd === 'c') {
-                isCurveCommand = true;
-                while (i + 5 < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
-                    const isRel = cmd === 'c';
-                    const cp1x = parseFloat(tokens[i++]) + (isRel ? curX : 0);
-                    const cp1y = parseFloat(tokens[i++]) + (isRel ? curY : 0);
-                    const cp2x = parseFloat(tokens[i++]) + (isRel ? curX : 0);
-                    const cp2y = parseFloat(tokens[i++]) + (isRel ? curY : 0);
-                    const ex = parseFloat(tokens[i++]) + (isRel ? curX : 0);
-                    const ey = parseFloat(tokens[i++]) + (isRel ? curY : 0);
-                    
-                    const STEPS = 8;
-                    for (let step = 1; step <= STEPS; step++) {
-                        const t = step / STEPS;
-                        const mt = 1 - t;
-                        const cx = mt*mt*mt*curX + 3*mt*mt*t*cp1x + 3*mt*t*t*cp2x + t*t*t*ex;
-                        const cy = mt*mt*mt*curY + 3*mt*mt*t*cp1y + 3*mt*t*t*cp2y + t*t*t*ey;
+                
+                let curX = 0, curY = 0;
+                let startX = 0, startY = 0;
+                let pathStarted = false;
+                let lastCp2X = null, lastCp2Y = null;
+                let pathHasZ = false; 
+                let i = 0;
+
+                while (i < tokens.length) {
+                    const cmd = tokens[i++];
+                    let isCurveCommand = false;
+
+                    if (cmd === 'M' || cmd === 'm') {
+                        const nx = parseFloat(tokens[i++]);
+                        const ny = parseFloat(tokens[i++]);
+                        const absX = (cmd === 'm' ? curX + nx : nx) || 0;
+                        const absY = (cmd === 'm' ? curY + ny : ny) || 0;
+                        curX = absX; curY = absY;
+                        startX = curX; startY = curY;
+                        pathStarted = true;
+                        const p = transformPoint(curX, curY);
+                        doc.moveTo(p.x, p.y);
+
+                        while (i + 1 < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
+                            const extraX = parseFloat(tokens[i++]);
+                            const extraY = parseFloat(tokens[i++]);
+                            const ax = (cmd === 'm' ? curX + extraX : extraX) || 0;
+                            const ay = (cmd === 'm' ? curY + extraY : extraY) || 0;
+                            const p2 = transformPoint(ax, ay);
+                            doc.lineTo(p2.x, p2.y);
+                            curX = ax; curY = ay;
+                        }
+                    } else if (cmd === 'L' || cmd === 'l') {
+                        while (i + 1 < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
+                            const nx = parseFloat(tokens[i++]);
+                            const ny = parseFloat(tokens[i++]);
+                            const absX = (cmd === 'l' ? curX + nx : nx) || 0;
+                            const absY = (cmd === 'l' ? curY + ny : ny) || 0;
+                            if (pathStarted) {
+                                const p2 = transformPoint(absX, absY);
+                                doc.lineTo(p2.x, p2.y);
+                            }
+                            curX = absX; curY = absY;
+                        }
+                    } else if (cmd === 'H' || cmd === 'h') {
+                        while (i < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
+                            const nx = parseFloat(tokens[i++]);
+                            const absX = (cmd === 'h' ? curX + nx : nx) || 0;
+                            if (pathStarted) {
+                                const p2 = transformPoint(absX, curY);
+                                doc.lineTo(p2.x, p2.y);
+                            }
+                            curX = absX;
+                        }
+                    } else if (cmd === 'V' || cmd === 'v') {
+                        while (i < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
+                            const ny = parseFloat(tokens[i++]);
+                            const absY = (cmd === 'v' ? curY + ny : ny) || 0;
+                            if (pathStarted) {
+                                const p2 = transformPoint(curX, absY);
+                                doc.lineTo(p2.x, p2.y);
+                            }
+                            curY = absY;
+                        }
+                    } else if (cmd === 'C' || cmd === 'c') {
+                        isCurveCommand = true;
+                        while (i + 5 < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
+                            const isRel = cmd === 'c';
+                            const cp1x = parseFloat(tokens[i++]) + (isRel ? curX : 0);
+                            const cp1y = parseFloat(tokens[i++]) + (isRel ? curY : 0);
+                            const cp2x = parseFloat(tokens[i++]) + (isRel ? curX : 0);
+                            const cp2y = parseFloat(tokens[i++]) + (isRel ? curY : 0);
+                            const ex = parseFloat(tokens[i++]) + (isRel ? curX : 0);
+                            const ey = parseFloat(tokens[i++]) + (isRel ? curY : 0);
+                            const STEPS = 8;
+                            for (let step = 1; step <= STEPS; step++) {
+                                const t = step / STEPS;
+                                const mt = 1 - t;
+                                const cx = mt*mt*mt*curX + 3*mt*mt*t*cp1x + 3*mt*t*t*cp2x + t*t*t*ex;
+                                const cy = mt*mt*mt*curY + 3*mt*mt*t*cp1y + 3*mt*t*t*cp2y + t*t*t*ey;
+                                if (pathStarted) {
+                                    const p2 = transformPoint(cx, cy);
+                                    doc.lineTo(p2.x, p2.y);
+                                }
+                            }
+                            curX = ex; curY = ey;
+                            lastCp2X = cp2x; lastCp2Y = cp2y;
+                        }
+                    } else if (cmd === 'S' || cmd === 's') {
+                        isCurveCommand = true;
+                        while (i + 3 < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
+                            const isRel = cmd === 's';
+                            let cp1x = curX, cp1y = curY;
+                            if (lastCp2X !== null && lastCp2Y !== null) {
+                                cp1x = curX * 2 - lastCp2X;
+                                cp1y = curY * 2 - lastCp2Y;
+                            }
+                            const cp2x = parseFloat(tokens[i++]) + (isRel ? curX : 0);
+                            const cp2y = parseFloat(tokens[i++]) + (isRel ? curY : 0);
+                            const ex = parseFloat(tokens[i++]) + (isRel ? curX : 0);
+                            const ey = parseFloat(tokens[i++]) + (isRel ? curY : 0);
+                            const STEPS = 8;
+                            for (let step = 1; step <= STEPS; step++) {
+                                const t = step / STEPS;
+                                const mt = 1 - t;
+                                const cx = mt*mt*mt*curX + 3*mt*mt*t*cp1x + 3*mt*t*t*cp2x + t*t*t*ex;
+                                const cy = mt*mt*mt*curY + 3*mt*mt*t*cp1y + 3*mt*t*t*cp2y + t*t*t*ey;
+                                if (pathStarted) {
+                                    const p2 = transformPoint(cx, cy);
+                                    doc.lineTo(p2.x, p2.y);
+                                }
+                            }
+                            curX = ex; curY = ey;
+                            lastCp2X = cp2x; lastCp2Y = cp2y;
+                        }
+                    } else if (cmd === 'Z' || cmd === 'z') {
+                        pathHasZ = true;
                         if (pathStarted) {
-                            const p2 = transformPoint(cx, cy);
+                            const p2 = transformPoint(startX, startY);
                             doc.lineTo(p2.x, p2.y);
                         }
+                        curX = startX; curY = startY;
                     }
-                    curX = ex; curY = ey;
-                    lastCp2X = cp2x; lastCp2Y = cp2y;
+                    if (!isCurveCommand) { lastCp2X = null; lastCp2Y = null; }
                 }
-            } else if (cmd === 'S' || cmd === 's') {
-                isCurveCommand = true;
-                while (i + 3 < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
-                    const isRel = cmd === 's';
-                    let cp1x = curX, cp1y = curY;
-                    if (lastCp2X !== null && lastCp2Y !== null) {
-                        cp1x = curX * 2 - lastCp2X;
-                        cp1y = curY * 2 - lastCp2Y;
-                    }
-                    const cp2x = parseFloat(tokens[i++]) + (isRel ? curX : 0);
-                    const cp2y = parseFloat(tokens[i++]) + (isRel ? curY : 0);
-                    const ex = parseFloat(tokens[i++]) + (isRel ? curX : 0);
-                    const ey = parseFloat(tokens[i++]) + (isRel ? curY : 0);
-                    
-                    const STEPS = 8;
-                    for (let step = 1; step <= STEPS; step++) {
-                        const t = step / STEPS;
-                        const mt = 1 - t;
-                        const cx = mt*mt*mt*curX + 3*mt*mt*t*cp1x + 3*mt*t*t*cp2x + t*t*t*ex;
-                        const cy = mt*mt*mt*curY + 3*mt*mt*t*cp1y + 3*mt*t*t*cp2y + t*t*t*ey;
-                        if (pathStarted) {
-                            const p2 = transformPoint(cx, cy);
-                            doc.lineTo(p2.x, p2.y);
-                        }
-                    }
-                    curX = ex; curY = ey;
-                    lastCp2X = cp2x; lastCp2Y = cp2y;
-                }
-            } else if (cmd === 'Z' || cmd === 'z') {
-                pathHasZ = true;
                 if (pathStarted) {
-                    const p2 = transformPoint(startX, startY);
-                    doc.lineTo(p2.x, p2.y);
+                    const mode = resolveDrawMode(fill, hasStroke, pathHasZ);
+                    executeDraw(mode);
                 }
-                curX = startX; curY = startY;
             }
-            if (!isCurveCommand) { lastCp2X = null; lastCp2Y = null; }
-        }
-        if (pathStarted) {
-            const mode = resolveDrawMode(fill, hasStroke, pathHasZ);
-            executeDraw(mode);
         }
     }
 }
