@@ -6,11 +6,11 @@ function transformOffset(ox, oy, orientation) {
     const rot = isMirrored ? 'R' + orientation.slice(1) : orientation;
     let rx, ry;
     switch (rot) {
-        case 'R0':   rx =  ox; ry =  oy; break;
-        case 'R90':  rx = -oy; ry =  ox; break;
+        case 'R0': rx = ox; ry = oy; break;
+        case 'R90': rx = -oy; ry = ox; break;
         case 'R180': rx = -ox; ry = -oy; break;
-        case 'R270': rx =  oy; ry = -ox; break;
-        default:     rx =  ox; ry =  oy; break;
+        case 'R270': rx = oy; ry = -ox; break;
+        default: rx = ox; ry = oy; break;
     }
     if (isMirrored) rx = -rx;
     return { x: rx, y: ry };
@@ -18,7 +18,7 @@ function transformOffset(ox, oy, orientation) {
 
 function transformAlignment(alignment, orientation) {
     let a = alignment;
-    
+
     // Extract rotation count and mirror flag
     const isMirrored = orientation.startsWith('M');
     const degMatch = orientation.match(/\d+/);
@@ -72,26 +72,26 @@ function transformAlignment(alignment, orientation) {
 
 // Default WINDOW positions for 'res' (Resistor) per orientation
 const RES_WINDOW_DEFAULTS = {
-    R0:   { 0: { ox: 36, oy: 40, align: 'Left'    }, 3: { ox: 36, oy: 76,  align: 'Left'    } },
-    R90:  { 0: { ox: 3,  oy: 56, align: 'VBottom' }, 3: { ox: 27, oy: 56,  align: 'VTop'    } },
-    R180: { 0: { ox: 36, oy: 76, align: 'Left'    }, 3: { ox: 36, oy: 40,  align: 'Left'    } },
-    R270: { 0: { ox: 27, oy: 56, align: 'VTop'    }, 3: { ox: 3,  oy: 56,  align: 'VBottom' } },
+    R0: { 0: { ox: 36, oy: 40, align: 'Left' }, 3: { ox: 36, oy: 76, align: 'Left' } },
+    R90: { 0: { ox: 3, oy: 56, align: 'VBottom' }, 3: { ox: 27, oy: 56, align: 'VTop' } },
+    R180: { 0: { ox: 36, oy: 76, align: 'Left' }, 3: { ox: 36, oy: 40, align: 'Left' } },
+    R270: { 0: { ox: 27, oy: 56, align: 'VTop' }, 3: { ox: 3, oy: 56, align: 'VBottom' } },
 };
 
 // Default WINDOW positions for 'cap' (Capacitor) per orientation
 const CAP_WINDOW_DEFAULTS = {
-    R0:   { 0: { ox: 24, oy: 8,  align: 'Left'    }, 3: { ox: 24, oy: 56, align: 'Left'    } },
-    R90:  { 0: { ox: 0,  oy: 32, align: 'VBottom' }, 3: { ox: 32, oy: 32, align: 'VTop'    } },
-    R180: { 0: { ox: 24, oy: 56, align: 'Left'    }, 3: { ox: 24, oy: 8,  align: 'Left'    } },
-    R270: { 0: { ox: 32, oy: 32, align: 'VTop'    }, 3: { ox: 0,  oy: 32, align: 'VBottom' } },
+    R0: { 0: { ox: 24, oy: 8, align: 'Left' }, 3: { ox: 24, oy: 56, align: 'Left' } },
+    R90: { 0: { ox: 0, oy: 32, align: 'VBottom' }, 3: { ox: 32, oy: 32, align: 'VTop' } },
+    R180: { 0: { ox: 24, oy: 56, align: 'Left' }, 3: { ox: 24, oy: 8, align: 'Left' } },
+    R270: { 0: { ox: 32, oy: 32, align: 'VTop' }, 3: { ox: 0, oy: 32, align: 'VBottom' } },
 };
 
 // Default WINDOW positions for 'ind' (Inductor) per orientation
 const IND_WINDOW_DEFAULTS = {
-    R0:   { 0: { ox: -2, oy: 40, align: 'Right'   }, 3: { ox: -2, oy: 72, align: 'Right'   } },
-    R90:  { 0: { ox: 3,  oy: 56, align: 'VBottom' }, 3: { ox: 31, oy: 56, align: 'VTop'    } },
-    R180: { 0: { ox: -2, oy: 72, align: 'Right'   }, 3: { ox: -2, oy: 40, align: 'Right'   } },
-    R270: { 0: { ox: 31, oy: 56, align: 'VTop'    }, 3: { ox: 3,  oy: 56, align: 'VBottom' } },
+    R0: { 0: { ox: -2, oy: 40, align: 'Right' }, 3: { ox: -2, oy: 72, align: 'Right' } },
+    R90: { 0: { ox: 3, oy: 56, align: 'VBottom' }, 3: { ox: 31, oy: 56, align: 'VTop' } },
+    R180: { 0: { ox: -2, oy: 72, align: 'Right' }, 3: { ox: -2, oy: 40, align: 'Right' } },
+    R270: { 0: { ox: 31, oy: 56, align: 'VTop' }, 3: { ox: 3, oy: 56, align: 'VBottom' } },
 };
 
 const COMPONENT_DEFAULTS = {
@@ -99,48 +99,48 @@ const COMPONENT_DEFAULTS = {
     cap: CAP_WINDOW_DEFAULTS,
     ind: IND_WINDOW_DEFAULTS,
     diode: {
-        R0:   { 0: { ox: 24, oy: 0,  align: 'Left'    }, 3: { ox: 24, oy: 64, align: 'Left'    } },
-        R90:  { 0: { ox: 0,  oy: 32, align: 'VBottom' }, 3: { ox: 32, oy: 32, align: 'VTop'    } },
-        R180: { 0: { ox: 24, oy: 64, align: 'Left'    }, 3: { ox: 24, oy: 0,  align: 'Left'    } },
-        R270: { 0: { ox: 32, oy: 32, align: 'VTop'    }, 3: { ox: 0,  oy: 32, align: 'VBottom' } },
+        R0: { 0: { ox: 24, oy: 0, align: 'Left' }, 3: { ox: 24, oy: 64, align: 'Left' } },
+        R90: { 0: { ox: 0, oy: 32, align: 'VBottom' }, 3: { ox: 32, oy: 32, align: 'VTop' } },
+        R180: { 0: { ox: 24, oy: 64, align: 'Left' }, 3: { ox: 24, oy: 0, align: 'Left' } },
+        R270: { 0: { ox: 32, oy: 32, align: 'VTop' }, 3: { ox: 0, oy: 32, align: 'VBottom' } },
     },
     zener: {
-        R0:   { 0: { ox: 24, oy: 0,  align: 'Left'    }, 3: { ox: 24, oy: 64, align: 'Left'    } },
-        R90:  { 0: { ox: -4, oy: 32, align: 'VBottom' }, 3: { ox: 36, oy: 32, align: 'VTop'    } },
-        R180: { 0: { ox: 24, oy: 64, align: 'Left'    }, 3: { ox: 24, oy: 0,  align: 'Left'    } },
-        R270: { 0: { ox: 36, oy: 32, align: 'VTop'    }, 3: { ox: -4, oy: 32, align: 'VBottom' } },
+        R0: { 0: { ox: 24, oy: 0, align: 'Left' }, 3: { ox: 24, oy: 64, align: 'Left' } },
+        R90: { 0: { ox: -4, oy: 32, align: 'VBottom' }, 3: { ox: 36, oy: 32, align: 'VTop' } },
+        R180: { 0: { ox: 24, oy: 64, align: 'Left' }, 3: { ox: 24, oy: 0, align: 'Left' } },
+        R270: { 0: { ox: 36, oy: 32, align: 'VTop' }, 3: { ox: -4, oy: 32, align: 'VBottom' } },
     },
     voltage: {
-        R0:   { 0: { ox: 24, oy: 16, align: 'Left'    }, 3: { ox: 24, oy: 96, align: 'Left'    } },
-        R90:  { 0: { ox: -32, oy: 56, align: 'VBottom' }, 3: { ox: 32, oy: 56, align: 'VTop'   } },
-        R180: { 0: { ox: 24, oy: 96, align: 'Left'    }, 3: { ox: 24, oy: 16, align: 'Left'    } },
-        R270: { 0: { ox: 32, oy: 56, align: 'VTop'    }, 3: { ox: -32, oy: 56, align: 'VBottom' } },
+        R0: { 0: { ox: 24, oy: 16, align: 'Left' }, 3: { ox: 24, oy: 96, align: 'Left' } },
+        R90: { 0: { ox: -32, oy: 56, align: 'VBottom' }, 3: { ox: 32, oy: 56, align: 'VTop' } },
+        R180: { 0: { ox: 24, oy: 96, align: 'Left' }, 3: { ox: 24, oy: 16, align: 'Left' } },
+        R270: { 0: { ox: 32, oy: 56, align: 'VTop' }, 3: { ox: -32, oy: 56, align: 'VBottom' } },
     },
     current: {
-        R0:   { 0: { ox: 26, oy: 0,  align: 'Left'    }, 3: { ox: 26, oy: 80, align: 'Left'    } },
-        R90:  { 0: { ox: -30, oy: 40, align: 'VBottom' }, 3: { ox: 34, oy: 40, align: 'VTop'   } },
-        R180: { 0: { ox: 26, oy: 80, align: 'Left'    }, 3: { ox: 26, oy: 0,  align: 'Left'    } },
-        R270: { 0: { ox: 34, oy: 40, align: 'VTop'    }, 3: { ox: -30, oy: 40, align: 'VBottom' } },
+        R0: { 0: { ox: 26, oy: 0, align: 'Left' }, 3: { ox: 26, oy: 80, align: 'Left' } },
+        R90: { 0: { ox: -30, oy: 40, align: 'VBottom' }, 3: { ox: 34, oy: 40, align: 'VTop' } },
+        R180: { 0: { ox: 26, oy: 80, align: 'Left' }, 3: { ox: 26, oy: 0, align: 'Left' } },
+        R270: { 0: { ox: 34, oy: 40, align: 'VTop' }, 3: { ox: -30, oy: 40, align: 'VBottom' } },
     },
     signal: {
-        R0:   { 0: { ox: 24, oy: 16, align: 'Left'    }, 3: { ox: 24, oy: 104, align: 'Left'   } },
-        R90:  { 0: { ox: -32, oy: 56, align: 'VBottom' }, 3: { ox: 32, oy: 56, align: 'VTop'   } },
-        R180: { 0: { ox: 24, oy: 104, align: 'Left'   }, 3: { ox: 24, oy: 16, align: 'Left'    } },
-        R270: { 0: { ox: 32, oy: 56, align: 'VTop'    }, 3: { ox: -32, oy: 56, align: 'VBottom' } },
+        R0: { 0: { ox: 24, oy: 16, align: 'Left' }, 3: { ox: 24, oy: 104, align: 'Left' } },
+        R90: { 0: { ox: -32, oy: 56, align: 'VBottom' }, 3: { ox: 32, oy: 56, align: 'VTop' } },
+        R180: { 0: { ox: 24, oy: 104, align: 'Left' }, 3: { ox: 24, oy: 16, align: 'Left' } },
+        R270: { 0: { ox: 32, oy: 56, align: 'VTop' }, 3: { ox: -32, oy: 56, align: 'VBottom' } },
     }
 };
 
 const COMPONENT_FORMULA_DEFAULTS = {
-    e:    { 0: { ox: 26, oy: 16, align: 'Left' }, 3: { ox: 26, oy: 96, align: 'Left' } },
-    e2:   { 0: { ox: 26, oy: 16, align: 'Left' }, 3: { ox: 26, oy: 96, align: 'Left' } },
-    g:    { 0: { ox: 26, oy: 16, align: 'Left' }, 3: { ox: 26, oy: 96, align: 'Left' } },
-    g2:   { 0: { ox: 26, oy: 16, align: 'Left' }, 3: { ox: 26, oy: 96, align: 'Left' } },
-    njf:  { 0: { ox: 58, oy: 32, align: 'Left' }, 3: { ox: 58, oy: 72, align: 'Left' } },
+    e: { 0: { ox: 26, oy: 16, align: 'Left' }, 3: { ox: 26, oy: 96, align: 'Left' } },
+    e2: { 0: { ox: 26, oy: 16, align: 'Left' }, 3: { ox: 26, oy: 96, align: 'Left' } },
+    g: { 0: { ox: 26, oy: 16, align: 'Left' }, 3: { ox: 26, oy: 96, align: 'Left' } },
+    g2: { 0: { ox: 26, oy: 16, align: 'Left' }, 3: { ox: 26, oy: 96, align: 'Left' } },
+    njf: { 0: { ox: 58, oy: 32, align: 'Left' }, 3: { ox: 58, oy: 72, align: 'Left' } },
     nmos: { 0: { ox: 58, oy: 32, align: 'Left' }, 3: { ox: 58, oy: 72, align: 'Left' } },
-    npn:  { 0: { ox: 58, oy: 32, align: 'Left' }, 3: { ox: 58, oy: 68, align: 'Left' } },
-    pjf:  { 0: { ox: 58, oy: 32, align: 'Left' }, 3: { ox: 58, oy: 72, align: 'Left' } },
+    npn: { 0: { ox: 58, oy: 32, align: 'Left' }, 3: { ox: 58, oy: 68, align: 'Left' } },
+    pjf: { 0: { ox: 58, oy: 32, align: 'Left' }, 3: { ox: 58, oy: 72, align: 'Left' } },
     pmos: { 0: { ox: 58, oy: 32, align: 'Left' }, 3: { ox: 58, oy: 72, align: 'Left' } },
-    pnp:  { 0: { ox: 58, oy: 32, align: 'Left' }, 3: { ox: 58, oy: 68, align: 'Left' } },
+    pnp: { 0: { ox: 58, oy: 32, align: 'Left' }, 3: { ox: 58, oy: 68, align: 'Left' } },
 };
 
 function getWindowText(sym, index) {
@@ -187,7 +187,7 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
     for (const m of svgText.matchAll(/<circle[^>]*>/g)) {
         const cx = parseFloat((m[0].match(/cx="(-?[\d.]+)"/) || [])[1] ?? 0);
         const cy = parseFloat((m[0].match(/cy="(-?[\d.]+)"/) || [])[1] ?? 0);
-        const r  = parseFloat((m[0].match(/\br="([\d.]+)"/)  || [])[1] ?? 0);
+        const r = parseFloat((m[0].match(/\br="([\d.]+)"/) || [])[1] ?? 0);
         xs.push(cx - r, cx + r); ys.push(cy - r, cy + r);
     }
     for (const m of svgText.matchAll(/points="([^"]+)"/g)) {
@@ -249,7 +249,7 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                 if (swMatch) sw = parseFloat(swMatch[1]);
                 if (fillMatch) fill = fillMatch[1].trim();
                 if (strokeMatch) stroke = strokeMatch[1].trim();
-                
+
                 for (const sel of selectors) {
                     if (!cssStyles[sel]) cssStyles[sel] = {};
                     if (sw !== null) cssStyles[sel].strokeWidth = sw;
@@ -263,9 +263,9 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
     // Helper to parse Hex color to array [r, g, b]
     const hexToRgb = (hexStr) => {
         let hex = hexStr.replace('#', '');
-        if (hex.length === 3) hex = hex[0]+hex[0] + hex[1]+hex[1] + hex[2]+hex[2];
+        if (hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
         if (hex.length === 6) {
-            return [parseInt(hex.substring(0,2), 16), parseInt(hex.substring(2,4), 16), parseInt(hex.substring(4,6), 16)];
+            return [parseInt(hex.substring(0, 2), 16), parseInt(hex.substring(2, 4), 16), parseInt(hex.substring(4, 6), 16)];
         }
         if (hexStr === 'white') return [255, 255, 255];
         return [0, 0, 0]; // default back to black
@@ -322,7 +322,7 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
         }
 
         if (wantFill && hasStroke) return 'FD-stroke';
-        if (wantFill)              return 'F-only';
+        if (wantFill) return 'F-only';
         return 'S';
     };
 
@@ -351,7 +351,7 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
             const p2 = transformPoint(rx + rw, ry);
             const p3 = transformPoint(rx + rw, ry + rh);
             const p4 = transformPoint(rx, ry + rh);
-            doc.lines([[p2.x-p1.x, p2.y-p1.y], [p3.x-p2.x, p3.y-p2.y], [p4.x-p3.x, p4.y-p3.y], [p1.x-p4.x, p1.y-p4.y]], p1.x, p1.y, [1,1], lStyle);
+            doc.lines([[p2.x - p1.x, p2.y - p1.y], [p3.x - p2.x, p3.y - p2.y], [p4.x - p3.x, p4.y - p3.y], [p1.x - p4.x, p1.y - p4.y]], p1.x, p1.y, [1, 1], lStyle);
         } else if (tagName === 'line') {
             applySvgStyle(fullTag);
             const x1 = parseFloat((fullTag.match(/x1="(-?[\d.]+)"/) || [])[1] ?? 0);
@@ -380,18 +380,18 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                 const nums = ptsMatch[1].trim().split(/[\s,]+/).map(Number);
                 const pts = [];
                 for (let i = 0; i < nums.length; i += 2) {
-                    pts.push(transformPoint(nums[i], nums[i+1]));
+                    pts.push(transformPoint(nums[i], nums[i + 1]));
                 }
                 if (pts.length > 1) {
                     const start = pts[0];
                     const lines = [];
                     for (let i = 1; i < pts.length; i++) {
-                        lines.push([pts[i].x - pts[i-1].x, pts[i].y - pts[i-1].y]);
+                        lines.push([pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y]);
                     }
                     if (isClosed) {
-                        lines.push([start.x - pts[pts.length-1].x, start.y - pts[pts.length-1].y]);
+                        lines.push([start.x - pts[pts.length - 1].x, start.y - pts[pts.length - 1].y]);
                     }
-                    doc.lines(lines, start.x, start.y, [1,1], lStyle);
+                    doc.lines(lines, start.x, start.y, [1, 1], lStyle);
                 }
             }
         } else if (tagName === 'path') {
@@ -477,8 +477,8 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                             for (let step = 1; step <= STEPS; step++) {
                                 const t = step / STEPS;
                                 const mt = 1 - t;
-                                const bx = mt*mt*mt*curX + 3*mt*mt*t*cp1x + 3*mt*t*t*cp2x + t*t*t*ex;
-                                const by = mt*mt*mt*curY + 3*mt*mt*t*cp1y + 3*mt*t*t*cp2y + t*t*t*ey;
+                                const bx = mt * mt * mt * curX + 3 * mt * mt * t * cp1x + 3 * mt * t * t * cp2x + t * t * t * ex;
+                                const by = mt * mt * mt * curY + 3 * mt * mt * t * cp1y + 3 * mt * t * t * cp2y + t * t * t * ey;
                                 if (pathStarted) addPoint(bx, by);
                             }
                             curX = ex; curY = ey;
@@ -501,8 +501,8 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                             for (let step = 1; step <= STEPS; step++) {
                                 const t = step / STEPS;
                                 const mt = 1 - t;
-                                const bx = mt*mt*mt*curX + 3*mt*mt*t*cp1x + 3*mt*t*t*cp2x + t*t*t*ex;
-                                const by = mt*mt*mt*curY + 3*mt*mt*t*cp1y + 3*mt*t*t*cp2y + t*t*t*ey;
+                                const bx = mt * mt * mt * curX + 3 * mt * mt * t * cp1x + 3 * mt * t * t * cp2x + t * t * t * ex;
+                                const by = mt * mt * mt * curY + 3 * mt * mt * t * cp1y + 3 * mt * t * t * cp2y + t * t * t * ey;
                                 if (pathStarted) addPoint(bx, by);
                             }
                             curX = ex; curY = ey;
@@ -521,13 +521,13 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                     const start = pathPoints[0];
                     const segments = [];
                     for (let j = 1; j < pathPoints.length; j++) {
-                        segments.push([pathPoints[j].x - pathPoints[j-1].x, pathPoints[j].y - pathPoints[j-1].y]);
+                        segments.push([pathPoints[j].x - pathPoints[j - 1].x, pathPoints[j].y - pathPoints[j - 1].y]);
                     }
                     // Close the path for filled shapes
                     if (pathHasZ) {
-                        segments.push([start.x - pathPoints[pathPoints.length-1].x, start.y - pathPoints[pathPoints.length-1].y]);
+                        segments.push([start.x - pathPoints[pathPoints.length - 1].x, start.y - pathPoints[pathPoints.length - 1].y]);
                     }
-                    doc.lines(segments, start.x, start.y, [1,1], lStyle, pathHasZ);
+                    doc.lines(segments, start.x, start.y, [1, 1], lStyle, pathHasZ);
                 }
             }
         }
@@ -555,7 +555,7 @@ function findIncomingWireDirection(x, y, wires) {
 function drawLTSpiceText(doc, text, x, y, alignment, ptSize) {
     if (!text) return;
     doc.setFontSize(ptSize);
-    
+
     const w = doc.getTextWidth(text);
     // LTSpice (Windows GDI) bases vertical placement on standard font metrics.
     // We approximate standard vector proportions used by LTSpice:
@@ -568,7 +568,7 @@ function drawLTSpiceText(doc, text, x, y, alignment, ptSize) {
 
     // 1. Calculate Horizontal Anchor Local Coordinates (relative to anchor x, y)
     if (baseAlign === 'Left') {
-        Lx = x; 
+        Lx = x;
         By = y - H / 2 + A;
     } else if (baseAlign === 'Right') {
         Lx = x - w;
@@ -592,7 +592,7 @@ function drawLTSpiceText(doc, text, x, y, alignment, ptSize) {
         // This is exactly what LTSpice's affine transformation matrix does for vertical text.
         const relX = Lx - x;
         const relY = By - y;
-        
+
         // CCW 90 degree rotation matrix applied to relative coordinates
         const rotX = relY;
         const rotY = -relX;
@@ -619,6 +619,7 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
     // 1. Calculate Bounds
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     const expand = (x, y) => {
+        if (isNaN(x) || isNaN(y)) return;
         minX = Math.min(minX, x); minY = Math.min(minY, y);
         maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
     };
@@ -628,6 +629,7 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         let maxArea = -1;
         for (let i = 0; i < scene.rectangles.length; i++) {
             const r = scene.rectangles[i];
+            if (isNaN(r.x1) || isNaN(r.y1) || isNaN(r.x2) || isNaN(r.y2)) continue;
             const area = Math.abs(r.x2 - r.x1) * Math.abs(r.y2 - r.y1);
             if (area > maxArea) { maxArea = area; largestRectIndex = i; }
         }
@@ -645,7 +647,7 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         for (const l of scene.lines) { expand(l.x1, l.y1); expand(l.x2, l.y2); }
         for (const c of scene.circles) { expand(c.x1, c.y1); expand(c.x2, c.y2); }
         for (const a of scene.arcs) { expand(a.x1, a.y1); expand(a.x2, a.y2); }
-        
+
         if (minX === Infinity) return null; // empty scene
         const MARGIN = 100;
         minX -= MARGIN; minY -= MARGIN; maxX += MARGIN; maxY += MARGIN;
@@ -679,22 +681,35 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         if (optCanvasBasedOnRect && i === largestRectIndex) continue;
         const r = scene.rectangles[i];
         applyPdfLineStyle(doc, r.style);
-        doc.rect(Math.min(r.x1, r.x2) - minX, Math.min(r.y1, r.y2) - minY, Math.abs(r.x2 - r.x1), Math.abs(r.y2 - r.y1), 'S');
+        
+        const rx = Math.min(r.x1, r.x2) - minX;
+        const ry = Math.min(r.y1, r.y2) - minY;
+        const rw = Math.abs(r.x2 - r.x1);
+        const rh = Math.abs(r.y2 - r.y1);
+        
+        if (isNaN(rx) || isNaN(ry) || isNaN(rw) || isNaN(rh)) {
+            console.error('[PDF_RENDERER] Invalid rect geometry detected:', r, { rx, ry, rw, rh, minX, minY });
+            continue;
+        }
+        
+        doc.rect(rx, ry, rw, rh, 'S');
     }
 
     for (const l of scene.lines) {
+        if (isNaN(l.x1) || isNaN(l.y1) || isNaN(l.x2) || isNaN(l.y2)) continue;
         applyPdfLineStyle(doc, l.style);
         doc.line(l.x1 - minX, l.y1 - minY, l.x2 - minX, l.y2 - minY);
     }
-    
+
     // 4.5 Draw Wires
     doc.setLineDashPattern([], 0); // Reset dash style
     doc.setLineWidth(1.5);
     doc.setDrawColor(0, 0, 0); // Black (was #000080)
     for (const w of scene.wires) {
+        if (isNaN(w.x1) || isNaN(w.y1) || isNaN(w.x2) || isNaN(w.y2)) continue;
         doc.line(w.x1 - minX, w.y1 - minY, w.x2 - minX, w.y2 - minY);
     }
-    
+
     // 5. Draw Symbols & SVGs
     doc.setLineDashPattern([], 0); // Reset dash style
     for (const sym of scene.symbols) {
@@ -708,7 +723,7 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         } else if (sym.asyData && sym.asyData.graphics) {
             // Natively draw fallback ASY components using jsPDF
             const g = sym.asyData.graphics;
-            doc.setDrawColor(0, 0, 0); 
+            doc.setDrawColor(0, 0, 0);
             doc.setLineWidth(1.5);
             doc.setLineCap(1);
             doc.setLineJoin(1);
@@ -736,7 +751,7 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
                 const p2 = transformAsyPoint(r.x2, r.y1);
                 const p3 = transformAsyPoint(r.x2, r.y2);
                 const p4 = transformAsyPoint(r.x1, r.y2);
-                doc.lines([[p2.x-p1.x, p2.y-p1.y], [p3.x-p2.x, p3.y-p2.y], [p4.x-p3.x, p4.y-p3.y], [p1.x-p4.x, p1.y-p4.y]], p1.x, p1.y, [1,1]);
+                doc.lines([[p2.x - p1.x, p2.y - p1.y], [p3.x - p2.x, p3.y - p2.y], [p4.x - p3.x, p4.y - p3.y], [p1.x - p4.x, p1.y - p4.y]], p1.x, p1.y, [1, 1]);
             }
             for (const l of g.lines) {
                 applyPdfLineStyle(doc, l.style);
@@ -759,7 +774,7 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
                 const finalAlign = transformAlignment(t.align, sym.orientation);
                 const isVertical = finalAlign.startsWith('V');
                 const baseAlign = isVertical ? finalAlign.slice(1) : finalAlign;
-                
+
                 let alignPdf = 'left';
                 let baselinePdf = 'middle';
                 if (baseAlign === 'Left') alignPdf = 'left';
@@ -769,11 +784,11 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
                 if (baseAlign === 'Bottom') { alignPdf = 'center'; baselinePdf = 'bottom'; }
 
                 const p = transformAsyPoint(t.x, t.y);
-                
+
                 // Debug Square
-                doc.setDrawColor(255, 0, 0); doc.setFillColor(255, 0, 0);
-                doc.rect(p.x - 1, p.y - 1, 2, 2, 'F');
-                
+                // doc.setDrawColor(255, 0, 0); doc.setFillColor(255, 0, 0);
+                // doc.rect(p.x - 1, p.y - 1, 2, 2, 'F');
+
                 doc.text(t.content, p.x, p.y, { align: alignPdf, baseline: baselinePdf, angle: isVertical ? 90 : 0 });
             }
         }
@@ -820,8 +835,8 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
             const finalAlign = transformAlignment(win.align, sym.orientation);
 
             // Debug Square
-            doc.setDrawColor(255, 0, 0); doc.setFillColor(255, 0, 0);
-            doc.rect(wx - 1, wy - 1, 2, 2, 'F');
+            // doc.setDrawColor(255, 0, 0); doc.setFillColor(255, 0, 0);
+            // doc.rect(wx - 1, wy - 1, 2, 2, 'F');
             doc.setTextColor(0, 0, 0);
 
             drawLTSpiceText(doc, text, wx, wy, finalAlign, ptSize);
@@ -834,13 +849,13 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
     for (const t of scene.texts) {
         const FONT_SIZE_MAP = { 0: 8, 1: 13, 2: 20, 3: 26, 4: 32, 5: 46, 6: 65, 7: 92 };
         const ptSize = FONT_SIZE_MAP[t.fontSize] || 8;
-        
+
         let tx = t.x - minX;
         let ty = t.y - minY;
 
         // Debug Square
-        doc.setDrawColor(255, 0, 0); doc.setFillColor(255, 0, 0);
-        doc.rect(tx - 1, ty - 1, 2, 2, 'F');
+        // doc.setDrawColor(255, 0, 0); doc.setFillColor(255, 0, 0);
+        // doc.rect(tx - 1, ty - 1, 2, 2, 'F');
 
         drawLTSpiceText(doc, t.content, tx, ty, t.alignment, ptSize);
     }
@@ -860,12 +875,12 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
                 if (dir === 'left') flagOrientation = 'R270';
             }
             drawSvgToPdf(doc, assets.svgStrings.get(type), flag.x, flag.y, flagOrientation, minX, minY);
-            
+
             if (!isGround) {
                 doc.setTextColor(0, 0, 0); // Black (was #4444cc)
                 doc.setFontSize(13); // Size 1 default mapping
-                
-                let align = 'Top'; 
+
+                let align = 'Top';
                 if (dir === 'top') align = 'Top';
                 if (dir === 'bottom') align = 'Bottom';
                 if (dir === 'left') align = 'Left';
