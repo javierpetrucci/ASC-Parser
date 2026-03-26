@@ -3,9 +3,9 @@
 // for special/custom components.
 
 async function fetchAsy(componentPath) {
-    // We map this to "../Assets/Component Symbols/[cleanedPath].asy"
+    // We map this to "Assets/Component Symbols/[cleanedPath].asy"
     const cleanedPath = componentPath.replace(/\\/g, '/');
-    const url = `../Assets/Component Symbols/${cleanedPath}.asy`;
+    const url = `Assets/Component Symbols/${cleanedPath}.asy`;
 
     try {
         const response = await fetch(url);
