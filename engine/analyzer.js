@@ -3,10 +3,9 @@
 // for special/custom components.
 
 async function fetchAsy(componentPath) {
-    // Expected componentPath looks like "TCLib\Special\arrow_curve"
-    // We map this to "/Assets/Component Symbols/TCLib/Special/arrow_curve.asy"
+    // We map this to "../Assets/Component Symbols/[cleanedPath].asy"
     const cleanedPath = componentPath.replace(/\\/g, '/');
-    const url = `/Assets/Component Symbols/${cleanedPath}.asy`;
+    const url = `../Assets/Component Symbols/${cleanedPath}.asy`;
 
     try {
         const response = await fetch(url);
@@ -100,14 +99,18 @@ function parseAsy(asyText) {
     return asyData;
 }
 
-async function analyzeSceneSymbols(scene) {
+async function analyzeSceneSymbols(scene, assets = null) {
     const promises = scene.symbols.map(async (sym) => {
-        // Only fetch .asy for components with a directory path (non-standard)
-        if (sym.type.includes('\\') || sym.type.includes('/')) {
-            const asyText = await fetchAsy(sym.type);
-            if (asyText) {
-                sym.asyData = parseAsy(asyText);
-            }
+        // Only use the .asy file as an auxiliary fallback if the 
+        // SVG skin file for this component is NOT present.
+        const basename = sym.type.split('\\').pop().split('/').pop();
+        if (assets && assets.svgStrings && assets.svgStrings.has(basename)) {
+            return; // SVG is present, skip ASY
+        }
+
+        const asyText = await fetchAsy(sym.type);
+        if (asyText) {
+            sym.asyData = parseAsy(asyText);
         }
     });
 

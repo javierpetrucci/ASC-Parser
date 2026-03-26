@@ -7,6 +7,7 @@ const downloadBtn = document.getElementById('download-btn');
 const pdfContainer = document.getElementById('pdf-container');
 const welcomeMsg = document.getElementById('welcome-msg');
 const optCanvasRect = document.getElementById('opt-canvas-rect');
+const optDebugAnchors = document.getElementById('opt-debug-anchors');
 const skinSelector = document.getElementById('skin-selector');
 
 let currentPdfBlob = null;
@@ -29,6 +30,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     option.textContent = s;
                     skinSelector.appendChild(option);
                 }
+                
+                // Add a "None" option to fallback entirely to ASY rendering
+                const noneOption = document.createElement('option');
+                noneOption.value = 'None';
+                noneOption.textContent = 'None';
+                skinSelector.appendChild(noneOption);
             }
         }
     } catch (e) {
@@ -38,6 +45,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 if (optCanvasRect) {
     optCanvasRect.addEventListener('change', () => {
+        if (currentFileObj) processFile(currentFileObj);
+    });
+}
+
+if (optDebugAnchors) {
+    optDebugAnchors.addEventListener('change', () => {
         if (currentFileObj) processFile(currentFileObj);
     });
 }
@@ -145,6 +158,7 @@ async function prepareAssets(scene) {
     const selectedSkin = skinSelector ? skinSelector.value : 'Default';
     
     const promises = Array.from(neededTypes).map(async (type) => {
+        if (selectedSkin === 'None') return; // Skip fetching, force ASY fallback
         try {
             const res = await fetch(`../Assets/Skins/${selectedSkin}/${type}.svg${ASSET_VERSION}`);
             if (res.ok) {
@@ -175,7 +189,17 @@ async function processFile(file) {
     pdfContainer.style.display = 'none';
 
     try {
-        const text = await file.text();
+        const buffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        
+        // Detect encoding: LTSpice uses UTF-16LE (with BOM) or Windows-1252 (ANSI)
+        let encoding = 'windows-1252'; 
+        if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
+            encoding = 'utf-16le';
+        }
+        
+        const decoder = new TextDecoder(encoding);
+        const text = decoder.decode(buffer);
         
         // 1. Parse ASC to Scene Sub-Graph 
         const scene = window.LTSpiceEngine.parse(text);
@@ -184,9 +208,10 @@ async function processFile(file) {
         const assets = await prepareAssets(scene);
         
         // 3. Render directly to PDF
-        // Read checkbox state
+        // Read checkbox states
         const options = {
-            canvasBasedOnRectangle: optCanvasRect ? optCanvasRect.checked : false
+            canvasBasedOnRectangle: optCanvasRect ? optCanvasRect.checked : false,
+            showTextAnchors: optDebugAnchors ? optDebugAnchors.checked : false
         };
         const pdfBytes = await window.LTSpiceEngine.render(scene, assets, currentFilename, options);
         

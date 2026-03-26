@@ -30,16 +30,39 @@ function parseAsc(text) {
                 });
             }
         } else if (type === 'SYMBOL') {
-            if (parts.length >= 5) {
-                currentSymbol = {
-                    type: parts[1],
-                    x: parseFloat(parts[2]),
-                    y: parseFloat(parts[3]),
-                    orientation: parts[4],
-                    windows: [],
-                    attrs: {}
-                };
-                scene.symbols.push(currentSymbol);
+            // The component type can contain escaped spaces (`\ `), so we cannot
+            // simply split by whitespace. We scan the raw line character-by-character
+            // to extract the full type token, then parse the remaining fields.
+            const rawLine = line.trim();
+            const matchSymbol = rawLine.match(/^SYMBOL\s+/i);
+            if (matchSymbol) {
+                let rest = rawLine.slice(matchSymbol[0].length);
+                // Extract type, treating `\ ` as an escaped space within the token
+                let symType = '';
+                let i = 0;
+                while (i < rest.length) {
+                    if (rest[i] === '\\' && i + 1 < rest.length && rest[i + 1] === ' ') {
+                        symType += ' '; // unescape `\ ` to a real space
+                        i += 2;
+                    } else if (rest[i] === ' ') {
+                        break; // real word boundary
+                    } else {
+                        symType += rest[i];
+                        i++;
+                    }
+                }
+                const remaining = rest.slice(i).trim().split(/\s+/);
+                if (remaining.length >= 3) {
+                    currentSymbol = {
+                        type: symType,
+                        x: parseFloat(remaining[0]),
+                        y: parseFloat(remaining[1]),
+                        orientation: remaining[2],
+                        windows: [],
+                        attrs: {}
+                    };
+                    scene.symbols.push(currentSymbol);
+                }
             }
         } else if (type === 'WINDOW') {
             if (currentSymbol && parts.length >= 6) {

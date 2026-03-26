@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LTSpice Window Tuner [DEV]</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background: #141418;
+            color: #e0e0e0;
+        }
+
+        /* ── Sidebar ─────────────────────────────── */
+        #sidebar {
+            width: 420px;
+            min-width: 320px;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #2a2a35;
+            overflow: hidden;
+        }
+
+        #sidebar-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #2a2a35;
+            background: #1a1a22;
+            flex-shrink: 0;
+        }
+
+        #sidebar-header h2 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #64ffda;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+        label { font-size: 12px; color: #999; }
+
+        select, input[type="number"] {
+            background: #0e0e14;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            outline: none;
+        }
+
+        select:focus, input[type="number"]:focus { border-color: #64ffda; }
+
+        #sidebar-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px;
+        }
+
+        /* ── Orientation Cards ────────────────────── */
+        .grid-4 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        .orient-card {
+            background: #1e1e28;
+            border: 1px solid #2a2a35;
+            border-radius: 6px;
+            padding: 10px 12px;
+        }
+
+        .orient-card h3 {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64ffda;
+            margin-bottom: 8px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .window-group { margin-bottom: 6px; }
+        .window-label { font-size: 10px; color: #888; margin-bottom: 3px; }
+
+        .inputs-row { display: flex; gap: 4px; align-items: center; }
+        .inputs-row label { font-size: 10px; color: #666; width: 10px; flex-shrink: 0; }
+        .inputs-row input[type="number"] { width: 52px; padding: 3px 5px; font-size: 11px; }
+        .inputs-row select { font-size: 10px; padding: 3px 4px; flex: 1; min-width: 0; }
+
+        /* ── Output ──────────────────────────────── */
+        #output-section {
+            border-top: 1px solid #2a2a35;
+            padding: 12px 16px;
+            flex-shrink: 0;
+            background: #1a1a22;
+        }
+
+        #output-section h3 { font-size: 12px; color: #aaa; margin-bottom: 8px; }
+
+        pre {
+            background: #0e0e14;
+            border: 1px solid #2a2a35;
+            border-radius: 4px;
+            padding: 8px 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: #a6e22e;
+            overflow-x: auto;
+            max-height: 120px;
+            overflow-y: auto;
+            user-select: all;
+        }
+
+        button {
+            margin-top: 8px;
+            background: #64ffda;
+            color: #000;
+            border: none;
+            padding: 7px 16px;
+            cursor: pointer;
+            font-weight: 600;
+            border-radius: 4px;
+            font-size: 12px;
+            transition: opacity 0.15s;
+        }
+        button:hover { opacity: 0.85; }
+
+        /* ── PDF Viewer ──────────────────────────── */
+        #viewer {
+            flex: 1;
+            background: #1a1a1f;
+            display: flex;
+            align-items: stretch;
+        }
+
+        #pdf-viewer { width: 100%; height: 100%; border: none; }
+
+        #status-bar {
+            padding: 4px 12px;
+            background: #111;
+            font-size: 10px;
+            color: #555;
+            border-top: 1px solid #222;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <div id="sidebar-header">
+        <h2>⚙ Window Text Alignment Tuner</h2>
+        <div class="row" style="gap:14px;">
+            <div>
+                <label>Component</label><br>
+                <select id="comp-select" style="margin-top:4px; width:160px;">
+                    <option value="res">res — Resistor</option>
+                    <option value="cap">cap — Capacitor</option>
+                    <option value="ind">ind — Inductor</option>
+                    <option value="diode">diode — Diode</option>
+                    <option value="npn">npn — BJT NPN</option>
+                    <option value="pnp">pnp — BJT PNP</option>
+                    <option value="voltage">voltage — Voltage</option>
+                    <option value="current">current — Current</option>
+                    <option value="njf">njf — JFET N</option>
+                    <option value="pjf">pjf — JFET P</option>
+                    <option value="nmos">nmos — MOSFET N</option>
+                    <option value="pmos">pmos — MOSFET P</option>
+                </select>
+            </div>
+            <div>
+                <label>Skin</label><br>
+                <select id="skin-select" style="margin-top:4px; width:110px;">
+                    <option value="Default">Default</option>
+                    <option value="None">None (ASY)</option>
+                </select>
+            </div>
+            <div>
+                <label>Debug Anchors</label><br>
+                <input type="checkbox" id="debug-anchors" style="margin-top:8px; width:16px; height:16px; cursor:pointer;">
+            </div>
+        </div>
+    </div>
+
+    <div id="sidebar-scroll">
+        <div id="controls" class="grid-4">
+            <!-- built by JS -->
+        </div>
+    </div>
+
+    <div id="output-section">
+        <h3>Output (copy to COMPONENT_DEFAULTS)</h3>
+        <pre id="output-json">{}</pre>
+        <button id="copy-btn">Copy</button>
+    </div>
+</div>
+
+<div style="display:flex; flex-direction: column; flex:1; overflow:hidden;">
+    <div id="viewer">
+        <iframe id="pdf-viewer"></iframe>
+    </div>
+    <div id="status-bar">Ready — scroll wheel adjusts numeric values</div>
+</div>
+
+<!-- Core Engine (same as production) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="../engine/parser.js"></script>
+<script src="../engine/analyzer.js"></script>
+<script src="../engine/pdf_renderer.js"></script>
+<script src="dev_window_tuner.js"></script>
+</body>
+</html>

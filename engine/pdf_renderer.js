@@ -146,9 +146,39 @@ const COMPONENT_FORMULA_DEFAULTS = {
 function getWindowText(sym, index) {
     if (index === 0) return sym.attrs['InstName'] || sym.asyData?.attrs?.['InstName'] || '';
     if (index === 3) {
-        if (sym.attrs['Value']) return sym.attrs['Value'];
-        if (sym.asyData?.attrs?.['Value']) return sym.asyData.attrs['Value'];
-        const basename = sym.type.split('\\').pop().split('/').pop();
+        let val = sym.attrs['Value'] || sym.asyData?.attrs?.['Value'] || '';
+        const basename = sym.type.split('\\').pop().split('/').pop().toLowerCase();
+
+        // Special formatting rules for res, cap, ind values (index 3)
+        if (['res', 'cap', 'ind'].includes(basename) && val) {
+            let workingVal = val.trim();
+            // Step 1: Remove trailing units from source (F, H, Hy) for cap/ind
+            if (basename === 'cap' && workingVal.toLowerCase().endsWith('f')) {
+                workingVal = workingVal.substring(0, workingVal.length - 1).trim();
+            } else if (basename === 'ind') {
+                if (workingVal.toLowerCase().endsWith('hy')) {
+                    workingVal = workingVal.substring(0, workingVal.length - 2).trim();
+                } else if (workingVal.toLowerCase().endsWith('h')) {
+                    workingVal = workingVal.substring(0, workingVal.length - 1).trim();
+                }
+            }
+
+            // Step 2: Handle suffixes (meg -> M, M/m -> m)
+            if (workingVal.toLowerCase().endsWith('meg')) {
+                workingVal = workingVal.substring(0, workingVal.length - 3) + 'M';
+            } else if (workingVal.toLowerCase().endsWith('m')) {
+                // Both 'M' and 'm' in LTSpice mean milli
+                workingVal = workingVal.substring(0, workingVal.length - 1) + 'm';
+            }
+
+            // Step 3: Append final units
+            if (basename === 'res') return workingVal + 'Ω';
+            if (basename === 'cap') return workingVal + 'F';
+            if (basename === 'ind') return workingVal + 'Hy';
+        }
+
+        if (val) return val;
+
         const defaults = {
             res: 'R', cap: 'C', ind: 'L', diode: 'D', zener: 'D', voltage: 'V', current: 'I', signal: 'V',
             e: 'E', e2: 'E', g: 'G', g2: 'G', npn: 'NPN', pnp: 'PNP', nmos: 'NMOS', pmos: 'PMOS', njf: 'NJF', pjf: 'PJF'
@@ -339,6 +369,50 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
         const fullTag = m[0];
         const tagName = m[1];
 
+        // Parse SVG transform="..." attribute
+        const tMatch = fullTag.match(/transform="([^"]+)"/);
+        let txA = 1, txB = 0, txC = 0, txD = 1, txE = 0, txF = 0;
+        if (tMatch) {
+            const regex = /([a-z]+)\s*\(([^)]+)\)/g;
+            let match;
+            while ((match = regex.exec(tMatch[1]))) {
+                const cmd = match[1];
+                const args = match[2].trim().split(/[\s,]+/).map(Number);
+                if (cmd === 'translate') {
+                    const tx = args[0] || 0, ty = args[1] !== undefined ? args[1] : 0;
+                    txE += txA * tx + txC * ty;
+                    txF += txB * tx + txD * ty;
+                } else if (cmd === 'rotate') {
+                    const angle = (args[0] || 0) * Math.PI / 180;
+                    const cx = args[1] || 0, cy = args[2] || 0;
+                    if (cx || cy) { txE += txA * cx + txC * cy; txF += txB * cx + txD * cy; }
+                    const cosA = Math.cos(angle), sinA = Math.sin(angle);
+                    const na = txA * cosA + txC * sinA, nb = txB * cosA + txD * sinA;
+                    const nc = -txA * sinA + txC * cosA, nd = -txB * sinA + txD * cosA;
+                    txA = na; txB = nb; txC = nc; txD = nd;
+                    if (cx || cy) { txE -= txA * cx + txC * cy; txF -= txB * cx + txD * cy; }
+                } else if (cmd === 'scale') {
+                    const sx = args[0] || 1, sy = args[1] !== undefined ? args[1] : sx;
+                    txA *= sx; txB *= sx; txC *= sy; txD *= sy;
+                } else if (cmd === 'matrix') {
+                    const [ma, mb, mc, md, me, mf] = args;
+                    const na = txA * ma + txC * mb, nb = txB * ma + txD * mb;
+                    const nc = txA * mc + txC * md, nd = txB * mc + txD * md;
+                    txE += txA * me + txC * mf; txF += txB * me + txD * mf;
+                    txA = na; txB = nb; txC = nc; txD = nd;
+                }
+            }
+        }
+
+        const localTransformPoint = (px, py) => {
+            if (txA !== 1 || txB !== 0 || txC !== 0 || txD !== 1 || txE !== 0 || txF !== 0) {
+                const npx = txA * px + txC * py + txE;
+                const npy = txB * px + txD * py + txF;
+                return transformPoint(npx, npy);
+            }
+            return transformPoint(px, py);
+        };
+
         if (tagName === 'rect') {
             const { fill, hasStroke } = applySvgStyle(fullTag);
             const mode = resolveDrawMode(fill, hasStroke, true);
@@ -347,10 +421,10 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
             const ry = parseFloat((fullTag.match(/y="(-?[\d.]+)"/) || [])[1] ?? 0);
             const rw = parseFloat((fullTag.match(/width="(-?[\d.]+)"/) || [])[1] ?? 0);
             const rh = parseFloat((fullTag.match(/height="(-?[\d.]+)"/) || [])[1] ?? 0);
-            const p1 = transformPoint(rx, ry);
-            const p2 = transformPoint(rx + rw, ry);
-            const p3 = transformPoint(rx + rw, ry + rh);
-            const p4 = transformPoint(rx, ry + rh);
+            const p1 = localTransformPoint(rx, ry);
+            const p2 = localTransformPoint(rx + rw, ry);
+            const p3 = localTransformPoint(rx + rw, ry + rh);
+            const p4 = localTransformPoint(rx, ry + rh);
             doc.lines([[p2.x - p1.x, p2.y - p1.y], [p3.x - p2.x, p3.y - p2.y], [p4.x - p3.x, p4.y - p3.y], [p1.x - p4.x, p1.y - p4.y]], p1.x, p1.y, [1, 1], lStyle);
         } else if (tagName === 'line') {
             applySvgStyle(fullTag);
@@ -358,8 +432,8 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
             const y1 = parseFloat((fullTag.match(/y1="(-?[\d.]+)"/) || [])[1] ?? 0);
             const x2 = parseFloat((fullTag.match(/x2="(-?[\d.]+)"/) || [])[1] ?? 0);
             const y2 = parseFloat((fullTag.match(/y2="(-?[\d.]+)"/) || [])[1] ?? 0);
-            const p1 = transformPoint(x1, y1);
-            const p2 = transformPoint(x2, y2);
+            const p1 = localTransformPoint(x1, y1);
+            const p2 = localTransformPoint(x2, y2);
             doc.line(p1.x, p1.y, p2.x, p2.y);
         } else if (tagName === 'circle') {
             const { fill, hasStroke } = applySvgStyle(fullTag);
@@ -368,7 +442,7 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
             const cx = parseFloat((fullTag.match(/cx="(-?[\d.]+)"/) || [])[1] ?? 0);
             const cy = parseFloat((fullTag.match(/cy="(-?[\d.]+)"/) || [])[1] ?? 0);
             const r = parseFloat((fullTag.match(/r="(-?[\d.]+)"/) || [])[1] ?? 0);
-            const cCenter = transformPoint(cx, cy);
+            const cCenter = localTransformPoint(cx, cy);
             doc.ellipse(cCenter.x, cCenter.y, r, r, ellipseStyle);
         } else if (tagName === 'polygon' || tagName === 'polyline') {
             const { fill, hasStroke } = applySvgStyle(fullTag);
@@ -380,7 +454,7 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                 const nums = ptsMatch[1].trim().split(/[\s,]+/).map(Number);
                 const pts = [];
                 for (let i = 0; i < nums.length; i += 2) {
-                    pts.push(transformPoint(nums[i], nums[i + 1]));
+                    pts.push(localTransformPoint(nums[i], nums[i + 1]));
                 }
                 if (pts.length > 1) {
                     const start = pts[0];
@@ -415,7 +489,7 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                 let i = 0;
 
                 const addPoint = (svgX, svgY) => {
-                    const p = transformPoint(svgX, svgY);
+                    const p = localTransformPoint(svgX, svgY);
                     pathPoints.push(p);
                 };
 
@@ -606,14 +680,65 @@ function drawLTSpiceText(doc, text, x, y, alignment, ptSize) {
     }
 }
 
+// Utility to draw a small red square at a specific coordinate for debugging alignment
+function drawDebugSquare(doc, x, y, color = [255, 0, 0]) {
+    const oldDraw = doc.getDrawColor();
+    const oldFill = doc.getFillColor();
+    doc.setDrawColor(color[0], color[1], color[2]);
+    doc.setFillColor(color[0], color[1], color[2]);
+    doc.rect(x - 1, y - 1, 2, 2, 'F');
+    doc.setDrawColor(oldDraw);
+    doc.setFillColor(oldFill);
+}
+
+// Utility to generate path segments for an LTSpice ARC (defined by bounding box + start/end coordinates)
+function drawPdfArc(doc, x1, y1, x2, y2, xs, ys, xe, ye, transformer = null) {
+    const cx = (x1 + x2) / 2;
+    const cy = (y1 + y2) / 2;
+    const rx = Math.abs(x2 - x1) / 2;
+    const ry = Math.abs(y2 - y1) / 2;
+    if (rx === 0 || ry === 0) return;
+
+    // Angles for the start and end coordinates relative to the ellipse center
+    let sa = Math.atan2(ys - cy, xs - cx);
+    let ea = Math.atan2(ye - cy, xe - cx);
+
+    // LTSpice (via Windows GDI) draws arcs visually Counter-Clockwise from start to end.
+    // Because Y increases downwards on screen, a visually CCW rotation corresponds to a decreasing mathematical angle.
+    let sweep = ea - sa;
+    if (sweep > 0) sweep -= 2 * Math.PI;
+
+    const segments = 32;
+    const step = sweep / segments;
+    const pts = [];
+    for (let i = 0; i <= segments; i++) {
+        const a = sa + i * step;
+        let px = cx + rx * Math.cos(a);
+        let py = cy + ry * Math.sin(a);
+        if (transformer) {
+            const tr = transformer(px, py);
+            px = tr.x;
+            py = tr.y;
+        }
+        pts.push({ x: px, y: py });
+    }
+
+    const lines = [];
+    const startObj = pts[0];
+    for (let i = 1; i < pts.length; i++) {
+        lines.push([pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y]);
+    }
+    doc.lines(lines, startObj.x, startObj.y, [1, 1], 'S', false);
+}
+
 
 // Main Library export
 async function convertSceneToPdf(scene, assets, filename = 'Schematic', options = {}) {
     const optCanvasBasedOnRect = options.canvasBasedOnRectangle || false;
 
-    // Analyze ASY elements if needed
+    // Analyze ASY elements if needed (supplying assets to skip fetched SVGs)
     if (typeof analyzeSceneSymbols === 'function') {
-        await analyzeSceneSymbols(scene);
+        await analyzeSceneSymbols(scene, assets);
     }
 
     // 1. Calculate Bounds
@@ -660,20 +785,25 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
     const doc = new window.jspdf.jsPDF({
         orientation: width > height ? 'l' : 'p',
         unit: 'pt',
-        format: [width, height]
+        format: [width, height],
+        putOnlyUsedFonts: false // Disable subsetting where possible to ensure full font embedding
     });
     doc.setProperties({ title: filename });
 
     // 3. Register Font (if passed through assets)
     if (assets.fontBase64) {
+        // Embed the full font name and match PostScript Name to ensure Illustrator compatibility
+        // Using "LMRoman10-Regular" to match the system's font metadata requirements
         doc.addFileToVFS('lmroman10.ttf', assets.fontBase64);
-        doc.addFont('lmroman10.ttf', 'LMRoman', 'normal');
-        doc.setFont('LMRoman');
+        doc.addFont('lmroman10.ttf', 'LMRoman10-Regular', 'normal');
+        doc.setFont('LMRoman10-Regular');
     }
 
     // Set line width defaults
     doc.setLineWidth(2);
     doc.setDrawColor(0, 0, 0); // Black (was LTSpice Blue)
+    doc.setLineCap(1);         // Round cap
+    doc.setLineJoin(1);        // Round join
 
     // 4. Draw Geometries
     for (let i = 0; i < scene.rectangles.length; i++) {
@@ -681,17 +811,17 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         if (optCanvasBasedOnRect && i === largestRectIndex) continue;
         const r = scene.rectangles[i];
         applyPdfLineStyle(doc, r.style);
-        
+
         const rx = Math.min(r.x1, r.x2) - minX;
         const ry = Math.min(r.y1, r.y2) - minY;
         const rw = Math.abs(r.x2 - r.x1);
         const rh = Math.abs(r.y2 - r.y1);
-        
+
         if (isNaN(rx) || isNaN(ry) || isNaN(rw) || isNaN(rh)) {
             console.error('[PDF_RENDERER] Invalid rect geometry detected:', r, { rx, ry, rw, rh, minX, minY });
             continue;
         }
-        
+
         doc.rect(rx, ry, rw, rh, 'S');
     }
 
@@ -699,6 +829,23 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         if (isNaN(l.x1) || isNaN(l.y1) || isNaN(l.x2) || isNaN(l.y2)) continue;
         applyPdfLineStyle(doc, l.style);
         doc.line(l.x1 - minX, l.y1 - minY, l.x2 - minX, l.y2 - minY);
+    }
+
+    for (const c of scene.circles) {
+        if (isNaN(c.x1) || isNaN(c.y1) || isNaN(c.x2) || isNaN(c.y2)) continue;
+        applyPdfLineStyle(doc, c.style);
+        const cx = (c.x1 + c.x2) / 2 - minX;
+        const cy = (c.y1 + c.y2) / 2 - minY;
+        const rRadius = Math.abs(c.x2 - c.x1) / 2;
+        doc.ellipse(cx, cy, rRadius, rRadius, 'S');
+    }
+
+    for (const a of scene.arcs) {
+        if (isNaN(a.x1) || isNaN(a.y1) || isNaN(a.x2) || isNaN(a.y2)) continue;
+        applyPdfLineStyle(doc, a.style);
+        drawPdfArc(doc, a.x1, a.y1, a.x2, a.y2, a.xs, a.ys, a.xe, a.ye, (px, py) => {
+            return { x: px - minX, y: py - minY };
+        });
     }
 
     // 4.5 Draw Wires
@@ -766,6 +913,10 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
                 const cp = transformAsyPoint(cx, cy);
                 doc.ellipse(cp.x, cp.y, rRadius, rRadius);
             }
+            for (const a of g.arcs) {
+                applyPdfLineStyle(doc, a.style);
+                drawPdfArc(doc, a.x1, a.y1, a.x2, a.y2, a.xs, a.ys, a.xe, a.ye, transformAsyPoint);
+            }
             for (const t of g.texts) {
                 doc.setTextColor(0, 0, 0);
                 const FONT_SIZE_MAP = { 0: 8, 1: 13, 2: 20, 3: 26, 4: 32, 5: 46, 6: 65, 7: 92 };
@@ -785,9 +936,9 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
 
                 const p = transformAsyPoint(t.x, t.y);
 
-                // Debug Square
-                // doc.setDrawColor(255, 0, 0); doc.setFillColor(255, 0, 0);
-                // doc.rect(p.x - 1, p.y - 1, 2, 2, 'F');
+                if (options.showTextAnchors) {
+                    drawDebugSquare(doc, p.x, p.y);
+                }
 
                 doc.text(t.content, p.x, p.y, { align: alignPdf, baseline: baselinePdf, angle: isVertical ? 90 : 0 });
             }
@@ -797,8 +948,10 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         let defaults = null;
         if (COMPONENT_DEFAULTS[basename]) {
             const table = COMPONENT_DEFAULTS[basename];
-            const lookupKey = sym.orientation.startsWith('M') ? 'R0' : sym.orientation;
-            defaults = table[lookupKey] || table['R0'];
+            // Prefer the exact orientation (e.g., M90), but use derivation rules as a fallback mechanism
+            const exactKey = sym.orientation;
+            const baseKey = sym.orientation.startsWith('M') ? 'R0' : sym.orientation;
+            defaults = table[exactKey] || table[baseKey] || table['R0'];
         } else {
             defaults = COMPONENT_FORMULA_DEFAULTS[basename];
         }
@@ -830,13 +983,13 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
             const ptSize = FONT_SIZE_MAP[win.fontSize] || 13;
 
             const rotated = transformOffset(win.ox, win.oy, sym.orientation);
-            let wx = sym.x + rotated.x - minX;
-            let wy = sym.y + rotated.y - minY;
+            const wx = sym.x + rotated.x - minX;
+            const wy = sym.y + rotated.y - minY;
             const finalAlign = transformAlignment(win.align, sym.orientation);
 
-            // Debug Square
-            // doc.setDrawColor(255, 0, 0); doc.setFillColor(255, 0, 0);
-            // doc.rect(wx - 1, wy - 1, 2, 2, 'F');
+            if (options.showTextAnchors) {
+                drawDebugSquare(doc, wx, wy);
+            }
             doc.setTextColor(0, 0, 0);
 
             drawLTSpiceText(doc, text, wx, wy, finalAlign, ptSize);
@@ -853,9 +1006,9 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         let tx = t.x - minX;
         let ty = t.y - minY;
 
-        // Debug Square
-        // doc.setDrawColor(255, 0, 0); doc.setFillColor(255, 0, 0);
-        // doc.rect(tx - 1, ty - 1, 2, 2, 'F');
+        if (options.showTextAnchors) {
+            drawDebugSquare(doc, tx, ty);
+        }
 
         drawLTSpiceText(doc, t.content, tx, ty, t.alignment, ptSize);
     }
@@ -881,12 +1034,19 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
                 doc.setFontSize(13); // Size 1 default mapping
 
                 let align = 'Top';
-                if (dir === 'top') align = 'Top';
-                if (dir === 'bottom') align = 'Bottom';
-                if (dir === 'left') align = 'Left';
-                if (dir === 'right') align = 'Right';
+                let ox = 0, oy = 0;
+                if (dir === 'top') { align = 'Top'; oy = 8; }
+                else if (dir === 'bottom') { align = 'Bottom'; oy = -8; }
+                else if (dir === 'left') { align = 'Left'; ox = 8; }
+                else if (dir === 'right') { align = 'Right'; ox = -8; }
 
-                drawLTSpiceText(doc, flag.name, flag.x - minX, flag.y - minY, align, 13);
+                const finalX = flag.x - minX + ox;
+                const finalY = flag.y - minY + oy;
+
+                if (options.showTextAnchors) {
+                    drawDebugSquare(doc, finalX, finalY);
+                }
+                drawLTSpiceText(doc, flag.name, finalX, finalY, align, 13);
             }
         }
     }
@@ -897,5 +1057,6 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
 
 window.LTSpiceEngine = {
     parse: typeof parseAsc !== 'undefined' ? parseAsc : null,
-    render: convertSceneToPdf
+    render: convertSceneToPdf,
+    defaults: typeof COMPONENT_DEFAULTS !== 'undefined' ? COMPONENT_DEFAULTS : {}
 };
