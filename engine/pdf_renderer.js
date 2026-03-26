@@ -970,7 +970,7 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
             drawSvgToPdf(doc, assets.svgStrings.get(type), flag.x, flag.y, flagOrientation, minX, minY);
 
             if (!isGround) {
-                doc.setTextColor(0, 0, 0); // Black (was #4444cc)
+                doc.setTextColor(0, 0, 0); // Black
                 doc.setFontSize(13); // Size 1 default mapping
 
                 let align = 'Top';
@@ -983,10 +983,52 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
                 const finalX = flag.x - minX + ox;
                 const finalY = flag.y - minY + oy;
 
-                if (options.showTextAnchors) {
-                    drawDebugSquare(doc, finalX, finalY);
-                }
+                if (options.showTextAnchors) drawDebugSquare(doc, finalX, finalY);
                 drawLTSpiceText(doc, flag.name, finalX, finalY, align, 13);
+            }
+        } else {
+            // Native fallback for ASY/None skin
+            const fx = flag.x - minX;
+            const fy = flag.y - minY;
+            doc.setLineWidth(1.5);
+            
+            if (isGround) {
+                let fOr = 'R0';
+                if (dir === 'right') fOr = 'R90';
+                else if (dir === 'bottom') fOr = 'R180';
+                else if (dir === 'left') fOr = 'R270';
+
+                // LTSpice GND.asy exact coordinates
+                const gndLines = [
+                    [-16, 16, 16, 16],
+                    [-16, 16, 0, 32],
+                    [16, 16, 0, 32],
+                    [0, 0, 0, 16]
+                ];
+                
+                for (const l of gndLines) {
+                    const pt1 = transformOffset(l[0], l[1], fOr);
+                    const pt2 = transformOffset(l[2], l[3], fOr);
+                    doc.line(fx + pt1.x, fy + pt1.y, fx + pt2.x, fy + pt2.y);
+                }
+            } else {
+                // Draw named node native fallback (small box + text)
+                doc.setFillColor(255, 255, 255);
+                doc.setDrawColor(0, 0, 0);
+                doc.rect(fx - 4, fy - 4, 8, 8, 'FD');
+                
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(13);
+                
+                let align = 'Top';
+                let ox = 0, oy = 0;
+                if (dir === 'top') { align = 'Top'; oy = 8; }
+                else if (dir === 'bottom') { align = 'Bottom'; oy = -8; }
+                else if (dir === 'left') { align = 'Left'; ox = 8; }
+                else if (dir === 'right') { align = 'Right'; ox = -8; }
+
+                if (options.showTextAnchors) drawDebugSquare(doc, fx + ox, fy + oy);
+                drawLTSpiceText(doc, flag.name, fx + ox, fy + oy, align, 13);
             }
         }
     }
