@@ -70,78 +70,10 @@ function transformAlignment(alignment, orientation) {
     }
 }
 
-// Default WINDOW positions for 'res' (Resistor) per orientation
-const RES_WINDOW_DEFAULTS = {
-    R0: { 0: { ox: 36, oy: 40, align: 'Left' }, 3: { ox: 36, oy: 76, align: 'Left' } },
-    R90: { 0: { ox: 3, oy: 56, align: 'VBottom' }, 3: { ox: 27, oy: 56, align: 'VTop' } },
-    R180: { 0: { ox: 36, oy: 76, align: 'Left' }, 3: { ox: 36, oy: 40, align: 'Left' } },
-    R270: { 0: { ox: 27, oy: 56, align: 'VTop' }, 3: { ox: 3, oy: 56, align: 'VBottom' } },
-};
+// Component window defaults are loaded from engine/component_defaults.js
+// (must be included before this script in the HTML)
 
-// Default WINDOW positions for 'cap' (Capacitor) per orientation
-const CAP_WINDOW_DEFAULTS = {
-    R0: { 0: { ox: 24, oy: 8, align: 'Left' }, 3: { ox: 24, oy: 56, align: 'Left' } },
-    R90: { 0: { ox: 0, oy: 32, align: 'VBottom' }, 3: { ox: 32, oy: 32, align: 'VTop' } },
-    R180: { 0: { ox: 24, oy: 56, align: 'Left' }, 3: { ox: 24, oy: 8, align: 'Left' } },
-    R270: { 0: { ox: 32, oy: 32, align: 'VTop' }, 3: { ox: 0, oy: 32, align: 'VBottom' } },
-};
 
-// Default WINDOW positions for 'ind' (Inductor) per orientation
-const IND_WINDOW_DEFAULTS = {
-    R0: { 0: { ox: -2, oy: 40, align: 'Right' }, 3: { ox: -2, oy: 72, align: 'Right' } },
-    R90: { 0: { ox: 3, oy: 56, align: 'VBottom' }, 3: { ox: 31, oy: 56, align: 'VTop' } },
-    R180: { 0: { ox: -2, oy: 72, align: 'Right' }, 3: { ox: -2, oy: 40, align: 'Right' } },
-    R270: { 0: { ox: 31, oy: 56, align: 'VTop' }, 3: { ox: 3, oy: 56, align: 'VBottom' } },
-};
-
-const COMPONENT_DEFAULTS = {
-    res: RES_WINDOW_DEFAULTS,
-    cap: CAP_WINDOW_DEFAULTS,
-    ind: IND_WINDOW_DEFAULTS,
-    diode: {
-        R0: { 0: { ox: 24, oy: 0, align: 'Left' }, 3: { ox: 24, oy: 64, align: 'Left' } },
-        R90: { 0: { ox: 0, oy: 32, align: 'VBottom' }, 3: { ox: 32, oy: 32, align: 'VTop' } },
-        R180: { 0: { ox: 24, oy: 64, align: 'Left' }, 3: { ox: 24, oy: 0, align: 'Left' } },
-        R270: { 0: { ox: 32, oy: 32, align: 'VTop' }, 3: { ox: 0, oy: 32, align: 'VBottom' } },
-    },
-    zener: {
-        R0: { 0: { ox: 24, oy: 0, align: 'Left' }, 3: { ox: 24, oy: 64, align: 'Left' } },
-        R90: { 0: { ox: -4, oy: 32, align: 'VBottom' }, 3: { ox: 36, oy: 32, align: 'VTop' } },
-        R180: { 0: { ox: 24, oy: 64, align: 'Left' }, 3: { ox: 24, oy: 0, align: 'Left' } },
-        R270: { 0: { ox: 36, oy: 32, align: 'VTop' }, 3: { ox: -4, oy: 32, align: 'VBottom' } },
-    },
-    voltage: {
-        R0: { 0: { ox: 24, oy: 16, align: 'Left' }, 3: { ox: 24, oy: 96, align: 'Left' } },
-        R90: { 0: { ox: -32, oy: 56, align: 'VBottom' }, 3: { ox: 32, oy: 56, align: 'VTop' } },
-        R180: { 0: { ox: 24, oy: 96, align: 'Left' }, 3: { ox: 24, oy: 16, align: 'Left' } },
-        R270: { 0: { ox: 32, oy: 56, align: 'VTop' }, 3: { ox: -32, oy: 56, align: 'VBottom' } },
-    },
-    current: {
-        R0: { 0: { ox: 26, oy: 0, align: 'Left' }, 3: { ox: 26, oy: 80, align: 'Left' } },
-        R90: { 0: { ox: -30, oy: 40, align: 'VBottom' }, 3: { ox: 34, oy: 40, align: 'VTop' } },
-        R180: { 0: { ox: 26, oy: 80, align: 'Left' }, 3: { ox: 26, oy: 0, align: 'Left' } },
-        R270: { 0: { ox: 34, oy: 40, align: 'VTop' }, 3: { ox: -30, oy: 40, align: 'VBottom' } },
-    },
-    signal: {
-        R0: { 0: { ox: 24, oy: 16, align: 'Left' }, 3: { ox: 24, oy: 104, align: 'Left' } },
-        R90: { 0: { ox: -32, oy: 56, align: 'VBottom' }, 3: { ox: 32, oy: 56, align: 'VTop' } },
-        R180: { 0: { ox: 24, oy: 104, align: 'Left' }, 3: { ox: 24, oy: 16, align: 'Left' } },
-        R270: { 0: { ox: 32, oy: 56, align: 'VTop' }, 3: { ox: -32, oy: 56, align: 'VBottom' } },
-    }
-};
-
-const COMPONENT_FORMULA_DEFAULTS = {
-    e: { 0: { ox: 26, oy: 16, align: 'Left' }, 3: { ox: 26, oy: 96, align: 'Left' } },
-    e2: { 0: { ox: 26, oy: 16, align: 'Left' }, 3: { ox: 26, oy: 96, align: 'Left' } },
-    g: { 0: { ox: 26, oy: 16, align: 'Left' }, 3: { ox: 26, oy: 96, align: 'Left' } },
-    g2: { 0: { ox: 26, oy: 16, align: 'Left' }, 3: { ox: 26, oy: 96, align: 'Left' } },
-    njf: { 0: { ox: 58, oy: 32, align: 'Left' }, 3: { ox: 58, oy: 72, align: 'Left' } },
-    nmos: { 0: { ox: 58, oy: 32, align: 'Left' }, 3: { ox: 58, oy: 72, align: 'Left' } },
-    npn: { 0: { ox: 58, oy: 32, align: 'Left' }, 3: { ox: 58, oy: 68, align: 'Left' } },
-    pjf: { 0: { ox: 58, oy: 32, align: 'Left' }, 3: { ox: 58, oy: 72, align: 'Left' } },
-    pmos: { 0: { ox: 58, oy: 32, align: 'Left' }, 3: { ox: 58, oy: 72, align: 'Left' } },
-    pnp: { 0: { ox: 58, oy: 32, align: 'Left' }, 3: { ox: 58, oy: 68, align: 'Left' } },
-};
 
 function getWindowText(sym, index) {
     if (index === 0) return sym.attrs['InstName'] || sym.asyData?.attrs?.['InstName'] || '';
@@ -945,30 +877,38 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         }
 
         // Draw Texts (Windows)
+        // Unified lookup: exact key → Rxx equivalent (for M) → R0 fallback.
+        // Works for all components: those with all 8 keys, those with R0–R270, and R0-only.
         let defaults = null;
-        if (COMPONENT_DEFAULTS[basename]) {
-            const table = COMPONENT_DEFAULTS[basename];
-            // Prefer the exact orientation (e.g., M90), but use derivation rules as a fallback mechanism
+        const table = COMPONENT_DEFAULTS[basename];
+        if (table) {
             const exactKey = sym.orientation;
-            const baseKey = sym.orientation.startsWith('M') ? 'R0' : sym.orientation;
-            defaults = table[exactKey] || table[baseKey] || table['R0'];
-        } else {
-            defaults = COMPONENT_FORMULA_DEFAULTS[basename];
+            const rotEquiv = sym.orientation.startsWith('M')
+                ? 'R' + sym.orientation.slice(1)   // M90 → R90
+                : sym.orientation;
+            defaults = table[exactKey] || table[rotEquiv] || table['R0'];
         }
 
         const effectiveWindows = new Map();
+        const useOverride = options.overrideAnchors && !!table;  // override only if component is in the dict
+
+        // Layer 1: component_defaults.js (always applied when available)
         if (defaults) {
             for (const [idx, def] of Object.entries(defaults)) {
                 effectiveWindows.set(parseInt(idx), { ox: def.ox, oy: def.oy, align: def.align, fontSize: 2 });
             }
         }
-        if (sym.asyData && sym.asyData.windows) {
-            for (const [idx, win] of Object.entries(sym.asyData.windows)) {
-                effectiveWindows.set(parseInt(idx), { ox: win.ox, oy: win.oy, align: win.align, fontSize: win.fontSize });
+
+        // Layer 2 & 3 are skipped when overrideAnchors is on for a known component
+        if (!useOverride) {
+            if (sym.asyData && sym.asyData.windows) {
+                for (const [idx, win] of Object.entries(sym.asyData.windows)) {
+                    effectiveWindows.set(parseInt(idx), { ox: win.ox, oy: win.oy, align: win.align, fontSize: win.fontSize });
+                }
             }
-        }
-        for (const win of sym.windows) {
-            effectiveWindows.set(win.index, { ox: win.offsetX, oy: win.offsetY, align: win.alignment, fontSize: win.fontSize });
+            for (const win of sym.windows) {
+                effectiveWindows.set(win.index, { ox: win.offsetX, oy: win.offsetY, align: win.alignment, fontSize: win.fontSize });
+            }
         }
         if (sym.type === 'ind' && ['R0', 'R180', 'M0', 'M180'].includes(sym.orientation)) {
             if (effectiveWindows.has(0)) effectiveWindows.get(0).align = 'Right';

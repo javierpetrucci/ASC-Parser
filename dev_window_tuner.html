@@ -19,8 +19,8 @@
 
         /* ── Sidebar ─────────────────────────────── */
         #sidebar {
-            width: 420px;
-            min-width: 320px;
+            width: 540px;
+            min-width: 540px;
             display: flex;
             flex-direction: column;
             border-right: 1px solid #2a2a35;
@@ -183,6 +183,10 @@
                 <label>Debug Anchors</label><br>
                 <input type="checkbox" id="debug-anchors" style="margin-top:8px; width:16px; height:16px; cursor:pointer;">
             </div>
+            <div>
+                <label>Tune M orientations</label><br>
+                <input type="checkbox" id="tune-mirror" style="margin-top:8px; width:16px; height:16px; cursor:pointer;">
+            </div>
         </div>
     </div>
 
@@ -208,9 +212,10 @@
 
 <!-- Core Engine (same as production) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="../engine/parser.js"></script>
-<script src="../engine/analyzer.js"></script>
-<script src="../engine/pdf_renderer.js"></script>
+<script src="engine/parser.js"></script>
+<script src="engine/analyzer.js"></script>
+<script src="engine/component_defaults.js"></script>
+<script src="engine/pdf_renderer.js"></script>
 <script src="dev_window_tuner.js"></script>
 </body>
 </html>

@@ -20,6 +20,7 @@ const ALIGN_OPTIONS = [
 const compSelect   = document.getElementById('comp-select');
 const skinSelect   = document.getElementById('skin-select');
 const debugAnchors = document.getElementById('debug-anchors');
+const tuneMirror   = document.getElementById('tune-mirror');
 const controlsDiv  = document.getElementById('controls');
 const outputPre    = document.getElementById('output-json');
 const pdfViewer    = document.getElementById('pdf-viewer');
@@ -44,7 +45,7 @@ async function prepareAssets(scene, skinName) {
     // Font — cached exactly like production
     if (!window.cachedFontBase64) {
         try {
-            const r = await fetch(`../Assets/Fonts/lmroman10-regular.ttf?v=${Date.now()}`);
+            const r = await fetch(`Assets/Fonts/lmroman10-regular.ttf?v=${Date.now()}`);
             if (r.ok) window.cachedFontBase64 = arrayBufferToBase64(await r.arrayBuffer());
         } catch (e) { console.warn('Font load failed', e); }
     }
@@ -56,7 +57,7 @@ async function prepareAssets(scene, skinName) {
         for (const sym of scene.symbols) types.add(sym.type.split('\\').pop().split('/').pop());
         await Promise.all(Array.from(types).map(async (t) => {
             try {
-                const r = await fetch(`../Assets/Skins/${skinName}/${t}.svg?v=${Date.now()}`);
+                const r = await fetch(`Assets/Skins/${skinName}/${t}.svg?v=${Date.now()}`);
                 if (r.ok) assets.svgStrings.set(t, await r.text());
             } catch (e) { /* silent */ }
         }));
@@ -99,7 +100,12 @@ function buildAscText(comp) {
 
     ORIENTATIONS.forEach((ori, i) => {
         const { x, y } = coordMap[ori];
-        const s = state[ori] || {};
+
+        // When M tuning is off, mirror cards use their R-equivalent's current state
+        const isMirror = ori.startsWith('M');
+        const sourceOri = (isMirror && !tuneMirror.checked) ? 'R' + ori.slice(1) : ori;
+
+        const s = state[sourceOri] || {};
         const w0 = s[0] || { ox: 0, oy: 0, align: 'Left' };
         const w3 = s[3] || { ox: 0, oy: 0, align: 'Left' };
 
@@ -167,12 +173,22 @@ function loadDefaults(comp) {
     state = {};
     const defs = (window.LTSpiceEngine.defaults || {})[comp] || {};
 
+    // Detect whether this table is orientation-keyed (res, cap…) or flat (e, bi…)
+    const isOrientedTable = ['R0', 'R90', 'R180', 'R270'].some(k => k in defs);
+
     for (const ori of ORIENTATIONS) {
         state[ori] = {};
         for (const win of [0, 3]) {
-            // Check exact orientation first, then fall back to same as R0
-            const row = defs[ori] || defs['R0'] || {};
-            const def = row[win] || { ox: 0, oy: 0, align: 'Left' };
+            let def;
+            if (isOrientedTable) {
+                // M90 → try M90 first, then R90 (same angle), then R0
+                const rotEquiv = ori.startsWith('M') ? 'R' + ori.slice(1) : ori;
+                const row = defs[ori] || defs[rotEquiv] || defs['R0'] || {};
+                def = row[win] || { ox: 0, oy: 0, align: 'Left' };
+            } else {
+                // Flat table: single entry applies to all orientations
+                def = defs[win] || { ox: 0, oy: 0, align: 'Left' };
+            }
             state[ori][win] = { ox: def.ox, oy: def.oy, align: def.align };
         }
     }
@@ -194,8 +210,11 @@ function syncToDOM() {
 // ── Output generation ───────────────────────────────────────────────────
 function updateOutput() {
     const comp = compSelect.value;
-    let out = `    '${comp}': {\n`;
-    for (const ori of ORIENTATIONS) {
+    const includeMirror = tuneMirror.checked;
+    const orisToExport = includeMirror ? ORIENTATIONS : ORIENTATIONS.filter(o => !o.startsWith('M'));
+
+    let out = `    ${comp}: {\n`;
+    for (const ori of orisToExport) {
         const w0 = state[ori]?.[0] || {};
         const w3 = state[ori]?.[3] || {};
         out += `        ${ori}: { 0: { ox: ${w0.ox}, oy: ${w0.oy}, align: '${w0.align}' }, 3: { ox: ${w3.ox}, oy: ${w3.oy}, align: '${w3.align}' } },\n`;
@@ -209,8 +228,10 @@ function buildControls() {
     controlsDiv.innerHTML = '';
 
     for (const ori of ORIENTATIONS) {
+        const isMirror = ori.startsWith('M');
         const card = document.createElement('div');
-        card.className = 'orient-card';
+        card.className = 'orient-card' + (isMirror ? ' mirror-card' : '');
+        card.dataset.ori = ori;
 
         const winRows = [0, 3].map(win => {
             const labelText = win === 0 ? 'Win 0 — InstName' : 'Win 3 — Value';
@@ -247,12 +268,45 @@ function buildControls() {
             }, { passive: false });
         }
     });
+
+    applyMirrorLock();
+}
+
+// ── Lock / unlock M-orientation cards ────────────────────────────────────
+function applyMirrorLock() {
+    const locked = !tuneMirror.checked;
+    controlsDiv.querySelectorAll('.mirror-card').forEach(card => {
+        card.style.opacity       = locked ? '0.4' : '1';
+        card.style.pointerEvents = locked ? 'none' : '';
+        card.querySelectorAll('input, select').forEach(el => { el.disabled = locked; });
+    });
+}
+
+// Seed M state from current R state so tuning starts from the live preview values
+function seedMirrorFromR() {
+    for (const ori of ['M0', 'M90', 'M180', 'M270']) {
+        const rOri = 'R' + ori.slice(1);   // M90 → R90
+        const src  = state[rOri] || {};
+        state[ori] = {};
+        for (const win of [0, 3]) {
+            const s = src[win] || { ox: 0, oy: 0, align: 'Left' };
+            state[ori][win] = { ox: s.ox, oy: s.oy, align: s.align };
+        }
+    }
 }
 
 // ── Top-level listeners ─────────────────────────────────────────────────
 compSelect.addEventListener('change', () => { loadDefaults(compSelect.value); queueRender(); });
 skinSelect.addEventListener('change', queueRender);
 debugAnchors.addEventListener('change', queueRender);
+tuneMirror.addEventListener('change', () => {
+    if (tuneMirror.checked) {
+        seedMirrorFromR();  // initialise M cards from current R-tuned values
+        syncToDOM();
+    }
+    applyMirrorLock();
+    updateOutput();
+});
 copyBtn.addEventListener('click', () => navigator.clipboard.writeText(outputPre.textContent));
 
 // ── Init ────────────────────────────────────────────────────────────────

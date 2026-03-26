@@ -8,6 +8,7 @@ const pdfContainer = document.getElementById('pdf-container');
 const welcomeMsg = document.getElementById('welcome-msg');
 const optCanvasRect = document.getElementById('opt-canvas-rect');
 const optDebugAnchors = document.getElementById('opt-debug-anchors');
+const optOverrideAnchors = document.getElementById('opt-override-anchors');
 const skinSelector = document.getElementById('skin-selector');
 
 let currentPdfBlob = null;
@@ -18,7 +19,7 @@ let currentFileObj = null;
 document.addEventListener('DOMContentLoaded', async () => {
     if (!skinSelector) return;
     try {
-        const res = await fetch('../Assets/Skins/skins.txt');
+        const res = await fetch('Assets/Skins/skins.txt');
         if (res.ok) {
             const text = await res.text();
             const skins = text.split('\n').map(s => s.trim()).filter(s => s.length > 0);
@@ -51,6 +52,12 @@ if (optCanvasRect) {
 
 if (optDebugAnchors) {
     optDebugAnchors.addEventListener('change', () => {
+        if (currentFileObj) processFile(currentFileObj);
+    });
+}
+
+if (optOverrideAnchors) {
+    optOverrideAnchors.addEventListener('change', () => {
         if (currentFileObj) processFile(currentFileObj);
     });
 }
@@ -133,7 +140,7 @@ async function prepareAssets(scene) {
     // Load Font once
     if (!window.cachedFontBase64) {
         try {
-            const fontRes = await fetch(`../Assets/Fonts/lmroman10-regular.ttf${ASSET_VERSION}`);
+            const fontRes = await fetch(`Assets/Fonts/lmroman10-regular.ttf${ASSET_VERSION}`);
             if (fontRes.ok) {
                 const buffer = await fontRes.arrayBuffer();
                 window.cachedFontBase64 = arrayBufferToBase64(buffer);
@@ -160,7 +167,7 @@ async function prepareAssets(scene) {
     const promises = Array.from(neededTypes).map(async (type) => {
         if (selectedSkin === 'None') return; // Skip fetching, force ASY fallback
         try {
-            const res = await fetch(`../Assets/Skins/${selectedSkin}/${type}.svg${ASSET_VERSION}`);
+            const res = await fetch(`Assets/Skins/${selectedSkin}/${type}.svg${ASSET_VERSION}`);
             if (res.ok) {
                 const text = await res.text();
                 assets.svgStrings.set(type, text);
@@ -211,7 +218,8 @@ async function processFile(file) {
         // Read checkbox states
         const options = {
             canvasBasedOnRectangle: optCanvasRect ? optCanvasRect.checked : false,
-            showTextAnchors: optDebugAnchors ? optDebugAnchors.checked : false
+            showTextAnchors: optDebugAnchors ? optDebugAnchors.checked : false,
+            overrideAnchors: optOverrideAnchors ? optOverrideAnchors.checked : true
         };
         const pdfBytes = await window.LTSpiceEngine.render(scene, assets, currentFilename, options);
         

@@ -6,18 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LTSpice to PDF</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/png" sizes="32x32" href="../Assets/UI/favicon/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="../Assets/UI/favicon/favicon-16x16.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="../Assets/UI/favicon/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="Assets/UI/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="Assets/UI/favicon/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="Assets/UI/favicon/favicon-96x96.png">
 
     <!-- jsPDF loaded for PDF Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <!-- Shared Engine Scripts -->
-    <script src="../engine/parser.js"></script>
-    <script src="../engine/analyzer.js"></script>
-    <script src="../engine/pdf_renderer.js"></script>
-    <script src="../engine/index.js"></script>
+    <script src="engine/parser.js"></script>
+    <script src="engine/analyzer.js"></script>
+    <script src="engine/component_defaults.js"></script>
+    <script src="engine/pdf_renderer.js"></script>
+    <script src="engine/index.js"></script>
 
     <!-- Web Interface Script -->
     <script src="app.js" defer></script>
@@ -33,7 +34,7 @@
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="logo-area">
-                <img src="../Assets/UI/Head.png" alt="LTSpice Renderer Header" class="header-logo">
+                <img src="Assets/UI/Head.png" alt="LTSpice Renderer Header" class="header-logo">
             </div>
 
             <div class="menu-area">
@@ -58,6 +59,14 @@
                 <label class="checkbox-label">
                     <input type="checkbox" id="opt-debug-anchors">
                     Text Anchor Point
+                    <span class="help-btn"
+                        data-tooltip="Display actual text anchor points, for debugging purposes.">ⓘ</span>
+                </label>
+                <label class=" checkbox-label">
+                    <input type="checkbox" id="opt-override-anchors" checked>
+                    Override text anchors
+                    <span class="help-btn"
+                        data-tooltip="Applies optimal visual text positioning, overriding coordinate values from the ASC file for recognized components.">ⓘ</span>
                 </label>
             </div>
 
