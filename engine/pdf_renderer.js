@@ -957,7 +957,7 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
     doc.setDrawColor(0, 0, 0);
     for (const flag of scene.flags) {
         const isGround = flag.name === '0';
-        const type = isGround ? 'gnd' : 'flag';
+        const type = isGround ? 'GND' : 'flag';
         const dir = findIncomingWireDirection(flag.x, flag.y, scene.wires);
 
         if (assets.svgStrings && assets.svgStrings.has(type)) {

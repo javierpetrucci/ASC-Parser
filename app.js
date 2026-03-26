@@ -158,7 +158,7 @@ async function prepareAssets(scene) {
         neededTypes.add(basename);
     }
     for (const flag of scene.flags) {
-        neededTypes.add(flag.name === '0' ? 'gnd' : 'flag');
+        neededTypes.add(flag.name === '0' ? 'GND' : 'flag');
     }
 
     // Fetch them using the selected skin
