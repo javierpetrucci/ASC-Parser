@@ -115,6 +115,21 @@ downloadBtn.addEventListener('click', () => {
     }
 });
 
+// Electron Batch Processing
+const batchBtn = document.getElementById('batch-btn');
+if (window.electronAPI && batchBtn) {
+    batchBtn.style.display = 'block';
+    batchBtn.addEventListener('click', async () => {
+        const sourceFolder = await window.electronAPI.selectFolder({ title: 'Select Source Folder (containing .asc files)' });
+        if (!sourceFolder) return;
+        
+        const destFolder = await window.electronAPI.selectFolder({ title: 'Select Destination Folder (for .pdf generated files)' });
+        if (!destFolder) return;
+        
+        await processBatch(sourceFolder, destFolder);
+    });
+}
+
 // ── 2. Controller Logic ──────────────────────────────────────────
 
 // Convert an ArrayBuffer or Blob to a base64 string
@@ -234,6 +249,63 @@ async function processFile(file) {
         pdfContainer.style.display = 'block';
         downloadBtn.disabled = false;
         
+    } catch (err) {
+        console.error(err);
+        welcomeMsg.innerHTML = `<h3 style="color:var(--accent)">Error</h3><p>${err.message}</p>`;
+    }
+}
+
+async function processBatch(sourceFolder, destFolder) {
+    welcomeMsg.innerHTML = `<h3>Batch Processing...</h3><p>Scanning folder...</p>`;
+    welcomeMsg.style.display = 'block';
+    pdfContainer.style.display = 'none';
+    
+    try {
+        const files = await window.electronAPI.findAscFiles(sourceFolder);
+        if (files.length === 0) {
+            welcomeMsg.innerHTML = `<h3>Done</h3><p>No .asc files found in that directory.</p>`;
+            return;
+        }
+
+        let successCount = 0;
+        for (let i = 0; i < files.length; i++) {
+            const filePath = files[i];
+            const filename = filePath.split(/[\\/]/).pop().replace(/\.[^/.]+$/, "");
+            
+            welcomeMsg.innerHTML = `<h3>Processing ${i+1}/${files.length}</h3><p>${filename}.asc</p>`;
+            // Allow UI to refresh
+            await new Promise(r => setTimeout(r, 10));
+
+            try {
+                const buffer = await window.electronAPI.readFile(filePath);
+                const bytes = new Uint8Array(buffer);
+                
+                let encoding = 'windows-1252'; 
+                if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
+                    encoding = 'utf-16le';
+                }
+                
+                const decoder = new TextDecoder(encoding);
+                const text = decoder.decode(bytes);
+                
+                const scene = window.LTSpiceEngine.parse(text);
+                const assets = await prepareAssets(scene);
+                
+                const options = {
+                    canvasBasedOnRectangle: optCanvasRect ? optCanvasRect.checked : false,
+                    showTextAnchors: optDebugAnchors ? optDebugAnchors.checked : false,
+                    overrideAnchors: optOverrideAnchors ? optOverrideAnchors.checked : true
+                };
+                
+                const pdfBytes = await window.LTSpiceEngine.render(scene, assets, filename, options);
+                await window.electronAPI.savePdf(filePath, pdfBytes, sourceFolder, destFolder);
+                successCount++;
+            } catch (fileErr) {
+                console.error(`Error processing ${filename}:`, fileErr);
+            }
+        }
+        
+        welcomeMsg.innerHTML = `<h3>Batch Complete</h3><p>Processed ${successCount} of ${files.length} schematics successfully.</p>`;
     } catch (err) {
         console.error(err);
         welcomeMsg.innerHTML = `<h3 style="color:var(--accent)">Error</h3><p>${err.message}</p>`;

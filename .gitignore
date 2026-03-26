@@ -1,0 +1,8 @@
+# Build outputs
+node_modules/
+dist/
+*.exe
+
+# Local development
+.DS_Store
+Thumbs.db
