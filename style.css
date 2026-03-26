@@ -415,3 +415,31 @@ body {
     text-decoration: underline;
     opacity: 1;
 }
+
+/* Responsive Design */
+@media screen and (max-width: 800px) {
+    body {
+        height: auto;
+        overflow-y: auto;
+    }
+
+    .app-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+        height: min-content;
+        min-height: 100vh;
+    }
+
+    .sidebar {
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+        max-height: none;
+        overflow-y: visible;
+        padding-bottom: 2rem;
+    }
+
+    .viewer-pane {
+        min-height: 60vh;
+    }
+}
