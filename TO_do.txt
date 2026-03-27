@@ -1,0 +1,1 @@
+The window can have a "hidden" attribute, in this case it should not be rendered, never.

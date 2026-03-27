@@ -222,7 +222,7 @@ body {
     align-items: center;
     gap: 0.5rem;
     padding: 0.6rem 0.5rem;
-    background: rgba(255,255,255,0.03);
+    background: rgba(255, 255, 255, 0.03);
     border: 1px dashed var(--border-color);
     border-radius: 4px;
     cursor: pointer;
@@ -231,7 +231,7 @@ body {
 }
 
 .folder-selector:hover {
-    background: rgba(255,255,255,0.08);
+    background: rgba(255, 255, 255, 0.08);
     border-color: var(--accent);
 }
 
@@ -400,19 +400,33 @@ body {
 
 @keyframes bg-pulse {
     0% {
-        opacity: 0.5;
+        opacity: 1;
         filter: blur(2px) brightness(0.7);
     }
 
-    50% {
-        opacity: 0.7;
+    47% {
+        opacity: 0.5;
         /* Much more visible */
-        filter: blur(1px) brightness(0.7);
+        filter: blur(2px) brightness(0.7);
+        /* Clearer vision */
+    }
+
+    50% {
+        opacity: 0.2;
+        /* Much more visible */
+        filter: blur(0px) brightness(1);
+        /* Clearer vision */
+    }
+
+    53% {
+        opacity: 0.5;
+        /* Much more visible */
+        filter: blur(2px) brightness(0.7);
         /* Clearer vision */
     }
 
     100% {
-        opacity: 0.5;
+        opacity: 1;
         filter: blur(2px) brightness(0.7);
     }
 }

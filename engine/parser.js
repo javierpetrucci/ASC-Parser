@@ -10,15 +10,15 @@ function parseAsc(text) {
         circles: [],
         arcs: []
     };
-    
+
     let currentSymbol = null;
-    
+
     for (const line of lines) {
         const parts = line.trim().split(/\s+/);
         if (parts.length === 0 || !parts[0]) continue;
-        
+
         const type = parts[0];
-        
+
         if (type === 'WIRE') {
             currentSymbol = null; // reset
             if (parts.length >= 5) {
@@ -150,6 +150,6 @@ function parseAsc(text) {
             }
         }
     }
-    
+
     return scene;
 }
