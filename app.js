@@ -95,11 +95,12 @@ document.addEventListener('drop', (e) => {
     }
 });
 
-// Browse button
-browseBtn.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) processFile(e.target.files[0]);
-});
+// File input manually triggered from dropzone click
+if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) processFile(e.target.files[0]);
+    });
+}
 
 // Download button
 downloadBtn.addEventListener('click', () => {
@@ -144,9 +145,10 @@ if (window.Neutralino) {
     
     // UI COSMETIC: Change Download button to Export for native desktop experience
     if (downloadBtn) downloadBtn.innerText = 'Export PDF';
-    
-    // UI COSMETIC: Change browse files to single file
-    if (browseBtn) browseBtn.innerText = 'Single file';
+
+    // UI COSMETIC: Hide the promo for the desktop app if we are already in it
+    const promo = document.getElementById('desktop-app-promo');
+    if (promo) promo.style.display = 'none';
 
     if (batchBox) {
         batchBox.style.display = 'block';

@@ -28,3 +28,17 @@ ERROR 2026-03-26 21:12:57,501 NE_RS_UNBLDRE: Unable to load application resource
 ERROR 2026-03-26 21:12:57,619 NE_RS_UNBLDRE: Unable to load application resource file /Assets/Skins/Boca Jrs/ASSD_CD4016B.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
 ERROR 2026-03-26 21:12:57,619 NE_RS_UNBLDRE: Unable to load application resource file /Assets/Skins/Boca Jrs/ASSD_LF398.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
 INFO 2026-03-26 21:26:38,709 Auth info was exported to ./.tmp/auth_info.json api\debug\debug.cpp:17 TC2@DESKTOP-GV8580B
+INFO 2026-03-26 21:37:55,451 Auth info was exported to ./.tmp/auth_info.json api\debug\debug.cpp:17 TC2@DESKTOP-GV8580B
+INFO 2026-03-26 22:01:40,756 Auth info was exported to ./.tmp/auth_info.json api\debug\debug.cpp:17 TC2@DESKTOP-GV8580B
+INFO 2026-03-26 22:05:45,700 Auth info was exported to ./.tmp/auth_info.json api\debug\debug.cpp:17 TC2@DESKTOP-GV8580B
+ERROR 2026-03-26 22:06:07,283 NE_RS_UNBLDRE: Unable to load application resource file /Assets/Skins/Default/G_Gil.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
+ERROR 2026-03-26 22:06:07,285 NE_RS_UNBLDRE: Unable to load application resource file /Assets/Skins/Default/battery.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
+ERROR 2026-03-26 22:06:07,286 NE_RS_UNBLDRE: Unable to load application resource file /Assets/Skins/Default/DIAC.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
+ERROR 2026-03-26 22:06:52,925 NE_RS_UNBLDRE: Unable to load application resource file /Assets/Skins/Default/B_Esponja.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
+ERROR 2026-03-26 22:06:52,925 NE_RS_UNBLDRE: Unable to load application resource file /Assets/Skins/Default/fdnr.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
+ERROR 2026-03-26 22:06:52,925 NE_RS_UNBLDRE: Unable to load application resource file /Assets/Skins/Default/Black_Box.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
+ERROR 2026-03-26 22:06:53,054 NE_RS_UNBLDRE: Unable to load application resource file /Assets/Skins/Default/G_Gil.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
+ERROR 2026-03-26 22:06:53,057 NE_RS_UNBLDRE: Unable to load application resource file /Assets/Skins/Default/battery.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
+ERROR 2026-03-26 22:06:53,057 NE_RS_UNBLDRE: Unable to load application resource file /Assets/Skins/Default/DIAC.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
+ERROR 2026-03-26 22:06:53,373 NE_RS_UNBLDRE: Unable to load application resource file /Assets/Skins/Default/ASSD_CD4016B.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
+ERROR 2026-03-26 22:06:53,373 NE_RS_UNBLDRE: Unable to load application resource file /Assets/Skins/Default/ASSD_LF398.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
