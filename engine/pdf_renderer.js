@@ -584,10 +584,12 @@ function drawLTSpiceText(doc, text, x, y, alignment, ptSize) {
         By = y - H / 2 + A;
     } else if (baseAlign === 'Top') {
         Lx = x - w / 2;
-        By = y + A; // GDI places anchor at cell Top
+        //By = y + A; // GDI places anchor at cell Top
+        By = y + A + (H * 0.225); // Manual offset to match spice position relative to component
     } else if (baseAlign === 'Bottom') {
         Lx = x - w / 2;
-        By = y; // GDI uses TA_BASELINE for Bottom, anchor explicitly at Baseline
+        //By = y; // GDI uses TA_BASELINE for Bottom, anchor explicitly at Baseline
+        By = y - (H * 0.225); //Manually increased baseline to match spice placement.
     } else {
         Lx = x;
         By = y;
@@ -728,7 +730,7 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         // Using "LMRoman10-Regular" to match the system's font metadata requirements
         doc.addFileToVFS('lmroman10.ttf', assets.fontBase64);
         doc.addFont('lmroman10.ttf', 'LMRoman10-Regular', 'normal');
-        doc.setFont('LMRoman10-Regular');
+        doc.setFont('LMRoman10-Regular', 'normal'); // Required second parameter
     }
 
     // Set line width defaults
@@ -991,7 +993,7 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
             const fx = flag.x - minX;
             const fy = flag.y - minY;
             doc.setLineWidth(1.5);
-            
+
             if (isGround) {
                 let fOr = 'R0';
                 if (dir === 'right') fOr = 'R90';
@@ -1005,7 +1007,7 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
                     [16, 16, 0, 32],
                     [0, 0, 0, 16]
                 ];
-                
+
                 for (const l of gndLines) {
                     const pt1 = transformOffset(l[0], l[1], fOr);
                     const pt2 = transformOffset(l[2], l[3], fOr);
@@ -1016,10 +1018,10 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
                 doc.setFillColor(255, 255, 255);
                 doc.setDrawColor(0, 0, 0);
                 doc.rect(fx - 4, fy - 4, 8, 8, 'FD');
-                
+
                 doc.setTextColor(0, 0, 0);
                 doc.setFontSize(13);
-                
+
                 let align = 'Top';
                 let ox = 0, oy = 0;
                 if (dir === 'top') { align = 'Top'; oy = 8; }

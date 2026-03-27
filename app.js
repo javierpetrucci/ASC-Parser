@@ -140,7 +140,7 @@ function updateBatchUI() {
 }
 
 // Initialize Neutralino if the native desktop wrapper is detected
-if (window.Neutralino) {
+if (window.NL_PORT && window.Neutralino) {
     Neutralino.init();
     
     // UI COSMETIC: Change Download button to Export for native desktop experience
@@ -196,8 +196,8 @@ function arrayBufferToBase64(buffer) {
     return window.btoa(binary);
 }
 
-// Cache-buster: changes each page load so browsers always fetch fresh assets
-const ASSET_VERSION = `?v=${Date.now()}`;
+// Cache-buster: changes each page load so browsers always fetch fresh assets, but breaks Neutralino routing.
+const ASSET_VERSION = window.NL_PORT ? '' : `?v=${Date.now()}`;
 
 // Ensure the font is loaded as base64 and SVGs are fetched dynamically based on parsed symbols
 async function prepareAssets(scene) {
@@ -209,7 +209,8 @@ async function prepareAssets(scene) {
     // Load Font once
     if (!window.cachedFontBase64) {
         try {
-            const fontRes = await fetch(`Assets/Fonts/lmroman10-regular.ttf${ASSET_VERSION}`);
+            // Static assets like fonts rarely change, so don't hit them with the cache-buster, which can interrupt binary streaming on local host servers
+            const fontRes = await fetch(`Assets/Fonts/lmroman10-regular.ttf`);
             if (fontRes.ok) {
                 const buffer = await fontRes.arrayBuffer();
                 window.cachedFontBase64 = arrayBufferToBase64(buffer);
