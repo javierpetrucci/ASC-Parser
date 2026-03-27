@@ -399,35 +399,18 @@ body {
 }
 
 @keyframes bg-pulse {
-    0% {
-        opacity: 1;
-        filter: blur(2px) brightness(0.7);
-    }
 
-    47% {
-        opacity: 0.5;
-        /* Much more visible */
-        filter: blur(2px) brightness(0.7);
-        /* Clearer vision */
+    0%,
+    100% {
+        opacity: 0.8;
+        filter: blur(2px) brightness(0.6);
     }
 
     50% {
-        opacity: 0.2;
-        /* Much more visible */
-        filter: blur(0px) brightness(1);
-        /* Clearer vision */
-    }
-
-    53% {
         opacity: 0.5;
         /* Much more visible */
-        filter: blur(2px) brightness(0.7);
+        filter: blur(1px) brightness(1);
         /* Clearer vision */
-    }
-
-    100% {
-        opacity: 1;
-        filter: blur(2px) brightness(0.7);
     }
 }
 
