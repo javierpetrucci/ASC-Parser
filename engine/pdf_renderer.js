@@ -878,48 +878,88 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
             }
         }
 
-        // Draw Texts (Windows)
-        // Unified lookup: exact key → Rxx equivalent (for M) → R0 fallback.
-        // Works for all components: those with all 8 keys, those with R0–R270, and R0-only.
-        let defaults = null;
+        // ── Window (text label) Resolution ─────────────────────────────────
+        //
+        // Priority rules (per the ASC format spec):
+        //
+        //   WHAT to render:    Determined by the ASY file. Every WINDOW index
+        //                      declared in the .asy is a candidate, plus any
+        //                      extra indexes added explicitly in the .asc.
+        //
+        //   WHERE to render:   Three-layer priority stack:
+        //
+        //     If "Override Text Anchors" (overrideAnchors) is ON and the
+        //     component has an entry in component_defaults.js:
+        //       → Use ONLY the component_defaults.js coordinates. ASY and
+        //         ASC coordinates are ignored for that component.
+        //
+        //     Otherwise (normal mode):
+        //       Layer 1 (lowest priority): ASY file WINDOW coordinates
+        //       Layer 2 (mid priority):    ASC file explicit WINDOW lines
+        //       (component_defaults.js is NOT used in normal mode)
+        //
+        // An index is only rendered if it has a non-empty text value to show.
+
+        // --- Step 1: Collect the full set of candidate window indexes ---
+        // Start from the ASY file (ground truth for which attributes exist),
+        // then add any extra ones explicitly provided in the ASC.
+        const candidateIndexes = new Set();
+        if (sym.asyData && sym.asyData.windows) {
+            for (const idx of Object.keys(sym.asyData.windows)) {
+                candidateIndexes.add(parseInt(idx));
+            }
+        }
+        for (const win of sym.windows) {
+            candidateIndexes.add(win.index); // ASC-explicit always a candidate
+        }
+
+        // --- Step 2: Resolve coordinates for each candidate index ---
+        const effectiveWindows = new Map();
         const table = COMPONENT_DEFAULTS[basename];
-        if (table) {
+        const useOverride = options.overrideAnchors && !!table;
+
+        if (useOverride) {
+            // Override mode: component_defaults.js is the COMPLETE contract.
+            // Only indexes explicitly listed there will be rendered.
+            // Intentionally omitting an index (e.g. 0/InstName) suppresses it.
             const exactKey = sym.orientation;
             const rotEquiv = sym.orientation.startsWith('M')
-                ? 'R' + sym.orientation.slice(1)   // M90 → R90
+                ? 'R' + sym.orientation.slice(1)
                 : sym.orientation;
-            defaults = table[exactKey] || table[rotEquiv] || table['R0'];
-        }
-
-        const effectiveWindows = new Map();
-        const useOverride = options.overrideAnchors && !!table;  // override only if component is in the dict
-
-        // Layer 1: component_defaults.js (always applied when available)
-        if (defaults) {
-            for (const [idx, def] of Object.entries(defaults)) {
-                effectiveWindows.set(parseInt(idx), { ox: def.ox, oy: def.oy, align: def.align, fontSize: 2 });
-            }
-        }
-
-        // Layer 2 & 3 are skipped when overrideAnchors is on for a known component
-        if (!useOverride) {
-            if (sym.asyData && sym.asyData.windows) {
-                for (const [idx, win] of Object.entries(sym.asyData.windows)) {
-                    effectiveWindows.set(parseInt(idx), { ox: win.ox, oy: win.oy, align: win.align, fontSize: win.fontSize });
+            const defaults = table[exactKey] || table[rotEquiv] || table['R0'];
+            if (defaults) {
+                for (const [idx, def] of Object.entries(defaults)) {
+                    effectiveWindows.set(parseInt(idx), { ox: def.ox, oy: def.oy, align: def.align, fontSize: 2 });
                 }
             }
+        } else {
+            // Normal mode: ASY base, then ASC overrides on top
+            // Layer 1: ASY coordinates (base)
+            for (const idx of candidateIndexes) {
+                const asyWin = sym.asyData?.windows?.[idx];
+                if (asyWin) {
+                    effectiveWindows.set(idx, { ox: asyWin.ox, oy: asyWin.oy, align: asyWin.align, fontSize: asyWin.fontSize });
+                } else {
+                    // No ASY coordinate for this index; start with a zero placeholder
+                    effectiveWindows.set(idx, { ox: 0, oy: 0, align: 'Left', fontSize: 2 });
+                }
+            }
+            // Layer 2: ASC-explicit windows override ASY values
             for (const win of sym.windows) {
                 effectiveWindows.set(win.index, { ox: win.offsetX, oy: win.offsetY, align: win.alignment, fontSize: win.fontSize });
             }
         }
+
+        // --- Step 3: Inductor special-case alignment override ---
         if (sym.type === 'ind' && ['R0', 'R180', 'M0', 'M180'].includes(sym.orientation)) {
             if (effectiveWindows.has(0)) effectiveWindows.get(0).align = 'Right';
             if (effectiveWindows.has(3)) effectiveWindows.get(3).align = 'Right';
         }
 
+        // --- Step 4: Render each window that has a non-empty text value ---
         for (const [idx, win] of effectiveWindows.entries()) {
             const text = getWindowText(sym, idx);
-            if (!text) continue;
+            if (!text) continue; // Skip indexes with no value to display
 
             const FONT_SIZE_MAP = { 0: 8, 1: 13, 2: 20, 3: 26, 4: 32, 5: 46, 6: 65, 7: 92 };
             const ptSize = FONT_SIZE_MAP[win.fontSize] || 13;

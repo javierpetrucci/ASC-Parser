@@ -101,13 +101,11 @@ function parseAsy(asyText) {
 
 async function analyzeSceneSymbols(scene, assets = null) {
     const promises = scene.symbols.map(async (sym) => {
-        // Only use the .asy file as an auxiliary fallback if the 
-        // SVG skin file for this component is NOT present.
-        const basename = sym.type.split('\\').pop().split('/').pop();
-        if (assets && assets.svgStrings && assets.svgStrings.has(basename)) {
-            return; // SVG is present, skip ASY
-        }
-
+        // ALWAYS fetch the ASY file for every symbol.
+        // The ASY file is the canonical source of truth for which WINDOW indexes
+        // exist (0, 3, 39, 40, 123), so we must always read it regardless of
+        // whether an SVG skin is selected. The renderer uses asyData.windows to
+        // determine which attribute labels to draw.
         const asyText = await fetchAsy(sym.type);
         if (asyText) {
             sym.asyData = parseAsy(asyText);

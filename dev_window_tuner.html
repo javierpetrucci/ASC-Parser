@@ -1,12 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>LTSpice Window Tuner [DEV]</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
         body {
             font-family: 'Inter', sans-serif;
@@ -42,11 +51,20 @@
             margin-bottom: 12px;
         }
 
-        .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
 
-        label { font-size: 12px; color: #999; }
+        label {
+            font-size: 12px;
+            color: #999;
+        }
 
-        select, input[type="number"] {
+        select,
+        input[type="number"] {
             background: #0e0e14;
             border: 1px solid #333;
             color: #e0e0e0;
@@ -57,7 +75,10 @@
             outline: none;
         }
 
-        select:focus, input[type="number"]:focus { border-color: #64ffda; }
+        select:focus,
+        input[type="number"]:focus {
+            border-color: #64ffda;
+        }
 
         #sidebar-scroll {
             flex: 1;
@@ -66,7 +87,11 @@
         }
 
         /* ── Orientation Cards ────────────────────── */
-        .grid-4 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .grid-4 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
 
         .orient-card {
             background: #1e1e28;
@@ -83,13 +108,41 @@
             font-family: 'JetBrains Mono', monospace;
         }
 
-        .window-group { margin-bottom: 6px; }
-        .window-label { font-size: 10px; color: #888; margin-bottom: 3px; }
+        .window-group {
+            margin-bottom: 6px;
+        }
 
-        .inputs-row { display: flex; gap: 4px; align-items: center; }
-        .inputs-row label { font-size: 10px; color: #666; width: 10px; flex-shrink: 0; }
-        .inputs-row input[type="number"] { width: 52px; padding: 3px 5px; font-size: 11px; }
-        .inputs-row select { font-size: 10px; padding: 3px 4px; flex: 1; min-width: 0; }
+        .window-label {
+            font-size: 10px;
+            color: #888;
+            margin-bottom: 3px;
+        }
+
+        .inputs-row {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .inputs-row label {
+            font-size: 10px;
+            color: #666;
+            width: 10px;
+            flex-shrink: 0;
+        }
+
+        .inputs-row input[type="number"] {
+            width: 52px;
+            padding: 3px 5px;
+            font-size: 11px;
+        }
+
+        .inputs-row select {
+            font-size: 10px;
+            padding: 3px 4px;
+            flex: 1;
+            min-width: 0;
+        }
 
         /* ── Output ──────────────────────────────── */
         #output-section {
@@ -99,7 +152,11 @@
             background: #1a1a22;
         }
 
-        #output-section h3 { font-size: 12px; color: #aaa; margin-bottom: 8px; }
+        #output-section h3 {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 8px;
+        }
 
         pre {
             background: #0e0e14;
@@ -127,7 +184,10 @@
             font-size: 12px;
             transition: opacity 0.15s;
         }
-        button:hover { opacity: 0.85; }
+
+        button:hover {
+            opacity: 0.85;
+        }
 
         /* ── PDF Viewer ──────────────────────────── */
         #viewer {
@@ -137,7 +197,11 @@
             align-items: stretch;
         }
 
-        #pdf-viewer { width: 100%; height: 100%; border: none; }
+        #pdf-viewer {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
 
         #status-bar {
             padding: 4px 12px;
@@ -149,73 +213,248 @@
         }
     </style>
 </head>
+
 <body>
 
-<div id="sidebar">
-    <div id="sidebar-header">
-        <h2>⚙ Window Text Alignment Tuner</h2>
-        <div class="row" style="gap:14px;">
-            <div>
-                <label>Component</label><br>
-                <select id="comp-select" style="margin-top:4px; width:160px;">
-                    <option value="res">res — Resistor</option>
-                    <option value="cap">cap — Capacitor</option>
-                    <option value="ind">ind — Inductor</option>
-                    <option value="diode">diode — Diode</option>
-                    <option value="npn">npn — BJT NPN</option>
-                    <option value="pnp">pnp — BJT PNP</option>
-                    <option value="voltage">voltage — Voltage</option>
-                    <option value="current">current — Current</option>
-                    <option value="njf">njf — JFET N</option>
-                    <option value="pjf">pjf — JFET P</option>
-                    <option value="nmos">nmos — MOSFET N</option>
-                    <option value="pmos">pmos — MOSFET P</option>
-                </select>
+    <div id="sidebar">
+        <div id="sidebar-header">
+            <h2>⚙ Window Text Alignment Tuner</h2>
+            <div class="row" style="gap:14px;">
+                <div>
+                    <label>Component</label><br>
+                    <select id="comp-select" style="margin-top:4px; width:160px;">
+                        <!--                    <option value="FerriteBead">FerriteBead</option>
+                    <option value="FerriteBead2">FerriteBead2</option>
+                    <option value="GND">GND</option>
+                    <option value="ISO16750-2">ISO16750-2</option>
+                    <option value="ISO7637-2">ISO7637-2</option>
+                    <option value="LED">LED</option>
+                    <option value="Misc/DIAC">Misc/DIAC</option>
+                    <option value="Misc/DIP10">Misc/DIP10</option>
+                    <option value="Misc/DIP14">Misc/DIP14</option>
+                    <option value="Misc/DIP16">Misc/DIP16</option>
+                    <option value="Misc/DIP20">Misc/DIP20</option>
+                    <option value="Misc/DIP8">Misc/DIP8</option>
+                    <option value="Misc/Epoly">Misc/Epoly</option>
+                    <option value="Misc/EuropeanCap">Misc/EuropeanCap</option>
+                    <option value="Misc/EuropeanPolcap">Misc/EuropeanPolcap</option>
+                    <option value="Misc/EuropeanResistor">Misc/EuropeanResistor</option>
+                    <option value="Misc/GS61008P">Misc/GS61008P</option>
+                    <option value="Misc/Gpoly">Misc/Gpoly</option>
+                    <option value="Misc/LT5400-1">Misc/LT5400-1</option>
+                    <option value="Misc/LT5400-2">Misc/LT5400-2</option>
+                    <option value="Misc/LT5400-3">Misc/LT5400-3</option>
+                    <option value="Misc/LT5400-4">Misc/LT5400-4</option>
+                    <option value="Misc/LT5400-5">Misc/LT5400-5</option>
+                    <option value="Misc/LT5400-6">Misc/LT5400-6</option>
+                    <option value="Misc/LT5400-7">Misc/LT5400-7</option>
+                    <option value="Misc/LT5400-8">Misc/LT5400-8</option>
+                    <option value="Misc/LT5401">Misc/LT5401</option>
+                    <option value="Misc/NE555">Misc/NE555</option>
+                    <option value="Misc/NIGBT">Misc/NIGBT</option>
+                    <option value="Misc/PIGBT">Misc/PIGBT</option>
+                    <option value="Misc/SCR">Misc/SCR</option>
+                    <option value="Misc/TRIAC">Misc/TRIAC</option>
+                    <option value="Misc/TowTom2">Misc/TowTom2</option>
+                    <option value="Misc/battery">Misc/battery</option>
+                    <option value="Misc/cell">Misc/cell</option>
+                    <option value="Misc/fixedind">Misc/fixedind</option>
+                    <option value="Misc/jumper">Misc/jumper</option>
+                    <option value="Misc/neonbulb">Misc/neonbulb</option>
+                    <option value="Misc/pentode">Misc/pentode</option>
+                    <option value="Misc/signal">Misc/signal</option>
+                    <option value="Misc/tetrode">Misc/tetrode</option>
+                    <option value="Misc/triode">Misc/triode</option>
+                    <option value="Misc/urc">Misc/urc</option>
+                    <option value="Misc/urc2">Misc/urc2</option>
+                    <option value="Misc/xtal">Misc/xtal</option>
+                    <option value="Misc/xvaristor">Misc/xvaristor</option>
+                    <option value="SOAtherm-HeatSink">SOAtherm-HeatSink</option>
+                    <option value="SOAtherm-NMOS">SOAtherm-NMOS</option>
+                    <option value="SOAtherm-PCB">SOAtherm-PCB</option>
+  -->
+                        <option value="TCLib/ASSD/ASSD_CD4016B">TCLib/ASSD/ASSD_CD4016B</option>
+                        <option value="TCLib/ASSD/ASSD_LF398">TCLib/ASSD/ASSD_LF398</option>
+                        <option value="TCLib/Amp_Current">TCLib/Amp_Current</option>
+                        <option value="TCLib/Amp_Transimpedance">TCLib/Amp_Transimpedance</option>
+                        <option value="TCLib/Comp_ideal">TCLib/Comp_ideal</option>
+                        <option value="TCLib/Darlington_Triac/BT_TRIAC">TCLib/Darlington_Triac/BT_TRIAC</option>
+                        <option value="TCLib/Darlington_Triac/Dnpn">TCLib/Darlington_Triac/Dnpn</option>
+                        <option value="TCLib/Darlington_Triac/Dpnp">TCLib/Darlington_Triac/Dpnp</option>
+                        <option value="TCLib/Darlington_Triac/TIP110">TCLib/Darlington_Triac/TIP110</option>
+                        <option value="TCLib/Darlington_Triac/TIP115">TCLib/Darlington_Triac/TIP115</option>
+                        <option value="TCLib/Ideal_Comp">TCLib/Ideal_Comp</option>
+                        <option value="TCLib/LF398">TCLib/LF398</option>
+                        <option value="TCLib/LM311">TCLib/LM311</option>
+                        <option value="TCLib/LM324">TCLib/LM324</option>
+                        <option value="TCLib/LM741">TCLib/LM741</option>
+                        <option value="TCLib/LM833">TCLib/LM833</option>
+                        <option value="TCLib/LMX24">TCLib/LMX24</option>
+                        <option value="TCLib/NPN_ideal">TCLib/NPN_ideal</option>
+                        <option value="TCLib/OA_Ideal">TCLib/OA_Ideal</option>
+                        <option value="TCLib/OA_param">TCLib/OA_param</option>
+                        <option value="TCLib/OA_param2">TCLib/OA_param2</option>
+                        <option value="TCLib/PNP_ideal">TCLib/PNP_ideal</option>
+                        <!--                    <option value="TCLib/PowerElectronics/BUZ80A">TCLib/PowerElectronics/BUZ80A</option>
+                    <option value="TCLib/PowerElectronics/transformer1">TCLib/PowerElectronics/transformer1</option>
+                    <option value="TCLib/PowerElectronics/transformer2">TCLib/PowerElectronics/transformer2</option>
+                    <option value="TCLib/Regulators/7805">TCLib/Regulators/7805</option>
+                    <option value="TCLib/Regulators/7812">TCLib/Regulators/7812</option>
+                    <option value="TCLib/Regulators/7815">TCLib/Regulators/7815</option>
+                    <option value="TCLib/Regulators/7905">TCLib/Regulators/7905</option>
+                    <option value="TCLib/Regulators/LM317">TCLib/Regulators/LM317</option>
+                    <option value="TCLib/Regulators/LM337">TCLib/Regulators/LM337</option>
+  -->
+                        <option value="TCLib/Special/74HCU04 Not">TCLib/Special/74HCU04 Not</option>
+                        <option value="TCLib/Special/Black_Box">TCLib/Special/Black_Box</option>
+                        <option value="TCLib/Special/CD4046B">TCLib/Special/CD4046B</option>
+                        <!--                    <option value="TCLib/Special/Characters/Amongus">TCLib/Special/Characters/Amongus</option>
+                    <option value="TCLib/Special/Characters/B_Esponja">TCLib/Special/Characters/B_Esponja</option>
+                    <option value="TCLib/Special/Characters/G_Gil">TCLib/Special/Characters/G_Gil</option>
+                    <option value="TCLib/Special/Characters/Goku">TCLib/Special/Characters/Goku</option>
+                    <option value="TCLib/Special/Characters/L_Messi">TCLib/Special/Characters/L_Messi</option>
+                    <option value="TCLib/Special/Characters/L_Messi_Saint">TCLib/Special/Characters/L_Messi_Saint</option>
+                    <option value="TCLib/Special/Characters/Nicop">TCLib/Special/Characters/Nicop</option>
+                    <option value="TCLib/Special/Characters/P_Chebyshev">TCLib/Special/Characters/P_Chebyshev</option>
+                    <option value="TCLib/Special/Characters/S_Gilda">TCLib/Special/Characters/S_Gilda</option>
+                    <option value="TCLib/Special/Characters/filtrito">TCLib/Special/Characters/filtrito</option>
+                    <option value="TCLib/Special/Characters/pulpito">TCLib/Special/Characters/pulpito</option>
+  -->
+                        <option value="TCLib/Special/Charge_Pump">TCLib/Special/Charge_Pump</option>
+                        <option value="TCLib/Special/Charge_Pump_Current">TCLib/Special/Charge_Pump_Current</option>
+                        <option value="TCLib/Special/Gain_Block">TCLib/Special/Gain_Block</option>
+                        <option value="TCLib/Special/L_Tap">TCLib/Special/L_Tap</option>
+                        <option value="TCLib/Special/OA_Box">TCLib/Special/OA_Box</option>
+                        <option value="TCLib/Special/OA_Signal">TCLib/Special/OA_Signal</option>
+                        <option value="TCLib/Special/OA_Signal2">TCLib/Special/OA_Signal2</option>
+                        <option value="TCLib/Special/OA_Yiu">TCLib/Special/OA_Yiu</option>
+                        <option value="TCLib/Special/OA_escaleno">TCLib/Special/OA_escaleno</option>
+                        <option value="TCLib/Special/VCO">TCLib/Special/VCO</option>
+                        <option value="TCLib/Special/ampmeter">TCLib/Special/ampmeter</option>
+                        <option value="TCLib/Special/arrow">TCLib/Special/arrow</option>
+                        <option value="TCLib/Special/arrow_Z">TCLib/Special/arrow_Z</option>
+                        <option value="TCLib/Special/arrow_Z2">TCLib/Special/arrow_Z2</option>
+                        <option value="TCLib/Special/arrow_curve">TCLib/Special/arrow_curve</option>
+                        <option value="TCLib/Special/bypass">TCLib/Special/bypass</option>
+                        <option value="TCLib/Special/dif">TCLib/Special/dif</option>
+                        <option value="TCLib/Special/diode_45">TCLib/Special/diode_45</option>
+                        <option value="TCLib/Special/fdnr">TCLib/Special/fdnr</option>
+                        <option value="TCLib/Special/gyrator">TCLib/Special/gyrator</option>
+                        <option value="TCLib/Special/lamp">TCLib/Special/lamp</option>
+                        <option value="TCLib/Special/node">TCLib/Special/node</option>
+                        <option value="TCLib/Special/res_45">TCLib/Special/res_45</option>
+                        <option value="TCLib/Special/res_45_spring">TCLib/Special/res_45_spring</option>
+                        <option value="TCLib/Special/res_60">TCLib/Special/res_60</option>
+                        <option value="TCLib/Special/res_60_spring">TCLib/Special/res_60_spring</option>
+                        <option value="TCLib/Special/res_pipe">TCLib/Special/res_pipe</option>
+                        <option value="TCLib/Special/res_rec">TCLib/Special/res_rec</option>
+                        <option value="TCLib/Special/res_spring">TCLib/Special/res_spring</option>
+                        <option value="TCLib/Special/switch_sch">TCLib/Special/switch_sch</option>
+                        <option value="TCLib/Special/xtal_">TCLib/Special/xtal_</option>
+                        <option value="TCLib/TL082">TCLib/TL082</option>
+                        <option value="TCLib/Untitled">TCLib/Untitled</option>
+                        <option value="TCLib/Vcc">TCLib/Vcc</option>
+                        <option value="TCLib/pot">TCLib/pot</option>
+                        <option value="TCLib/square">TCLib/square</option>
+                        <option value="TCLib/supply">TCLib/supply</option>
+                        <option value="TCLib/switch">TCLib/switch</option>
+                        <option value="TCLib/triangular">TCLib/triangular</option>
+                        <option value="TCLib/v_cell">TCLib/v_cell</option>
+                        <option value="TVSdiode">TVSdiode</option>
+                        <option value="bi">bi</option>
+                        <option value="bi2">bi2</option>
+                        <option value="bv">bv</option>
+                        <option value="cap">cap</option>
+                        <option value="csw">csw</option>
+                        <option value="current">current</option>
+                        <option value="diode">diode</option>
+                        <option value="e">e</option>
+                        <option value="e2">e2</option>
+                        <option value="f">f</option>
+                        <option value="fra">fra</option>
+                        <option value="fraprobe">fraprobe</option>
+                        <option value="g">g</option>
+                        <option value="g2">g2</option>
+                        <option value="h">h</option>
+                        <option value="ind">ind</option>
+                        <option value="ind2">ind2</option>
+                        <option value="load">load</option>
+                        <option value="load2">load2</option>
+                        <option value="lpnp">lpnp</option>
+                        <option value="ltline">ltline</option>
+                        <option value="mesfet">mesfet</option>
+                        <option value="njf">njf</option>
+                        <option value="nmos">nmos</option>
+                        <option value="nmos4">nmos4</option>
+                        <option value="npn">npn</option>
+                        <option value="npn2">npn2</option>
+                        <option value="npn3">npn3</option>
+                        <option value="npn4">npn4</option>
+                        <option value="pjf">pjf</option>
+                        <option value="pmos">pmos</option>
+                        <option value="pmos4">pmos4</option>
+                        <option value="pnp">pnp</option>
+                        <option value="pnp2">pnp2</option>
+                        <option value="pnp4">pnp4</option>
+                        <option value="polcap">polcap</option>
+                        <option value="res">res</option>
+                        <option value="res2">res2</option>
+                        <option value="schottky">schottky</option>
+                        <option value="sw">sw</option>
+                        <option value="tline">tline</option>
+                        <option value="varactor">varactor</option>
+                        <option value="voltage">voltage</option>
+                        <option value="voltage2">voltage2</option>
+                        <option value="zener">zener</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Skin</label><br>
+                    <select id="skin-select" style="margin-top:4px; width:110px;">
+                        <option value="Default">Default</option>
+                        <option value="None">None (ASY)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Debug Anchors</label><br>
+                    <input type="checkbox" id="debug-anchors"
+                        style="margin-top:8px; width:16px; height:16px; cursor:pointer;">
+                </div>
+                <div>
+                    <label>Tune M orientations</label><br>
+                    <input type="checkbox" id="tune-mirror"
+                        style="margin-top:8px; width:16px; height:16px; cursor:pointer;">
+                </div>
             </div>
-            <div>
-                <label>Skin</label><br>
-                <select id="skin-select" style="margin-top:4px; width:110px;">
-                    <option value="Default">Default</option>
-                    <option value="None">None (ASY)</option>
-                </select>
+        </div>
+
+        <div id="sidebar-scroll">
+            <div id="controls" class="grid-4">
+                <!-- built by JS -->
             </div>
-            <div>
-                <label>Debug Anchors</label><br>
-                <input type="checkbox" id="debug-anchors" style="margin-top:8px; width:16px; height:16px; cursor:pointer;">
-            </div>
-            <div>
-                <label>Tune M orientations</label><br>
-                <input type="checkbox" id="tune-mirror" style="margin-top:8px; width:16px; height:16px; cursor:pointer;">
-            </div>
+        </div>
+
+        <div id="output-section">
+            <h3>Output (copy to COMPONENT_DEFAULTS)</h3>
+            <pre id="output-json">{}</pre>
+            <button id="copy-btn">Copy</button>
         </div>
     </div>
 
-    <div id="sidebar-scroll">
-        <div id="controls" class="grid-4">
-            <!-- built by JS -->
+    <div style="display:flex; flex-direction: column; flex:1; overflow:hidden;">
+        <div id="viewer">
+            <iframe id="pdf-viewer"></iframe>
         </div>
+        <div id="status-bar">Ready — scroll wheel adjusts numeric values</div>
     </div>
 
-    <div id="output-section">
-        <h3>Output (copy to COMPONENT_DEFAULTS)</h3>
-        <pre id="output-json">{}</pre>
-        <button id="copy-btn">Copy</button>
-    </div>
-</div>
-
-<div style="display:flex; flex-direction: column; flex:1; overflow:hidden;">
-    <div id="viewer">
-        <iframe id="pdf-viewer"></iframe>
-    </div>
-    <div id="status-bar">Ready — scroll wheel adjusts numeric values</div>
-</div>
-
-<!-- Core Engine (same as production) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="engine/parser.js"></script>
-<script src="engine/analyzer.js"></script>
-<script src="engine/component_defaults.js"></script>
-<script src="engine/pdf_renderer.js"></script>
-<script src="dev_window_tuner.js"></script>
+    <!-- Core Engine (same as production) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="engine/parser.js"></script>
+    <script src="engine/analyzer.js"></script>
+    <script src="engine/component_defaults.js"></script>
+    <script src="engine/pdf_renderer.js"></script>
+    <script src="dev_window_tuner.js"></script>
 </body>
+
 </html>
