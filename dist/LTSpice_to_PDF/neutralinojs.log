@@ -1,0 +1,10 @@
+ERROR 2026-03-27 13:33:41,478 NE_RS_UNBLDRE: Unable to load application resource file /www/Assets/Skins/Boca Jrs/fdnr.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
+ERROR 2026-03-27 13:33:41,483 NE_RS_UNBLDRE: Unable to load application resource file /www/Assets/Skins/Boca Jrs/B_Esponja.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
+ERROR 2026-03-27 13:33:41,487 NE_RS_UNBLDRE: Unable to load application resource file /www/Assets/Skins/Boca Jrs/Black_Box.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
+ERROR 2026-03-27 13:33:41,773 NE_RS_UNBLDRE: Unable to load application resource file /www/Assets/Skins/Boca Jrs/G_Gil.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
+ERROR 2026-03-27 13:33:41,778 NE_RS_UNBLDRE: Unable to load application resource file /www/Assets/Skins/Boca Jrs/battery.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
+ERROR 2026-03-27 13:33:41,784 NE_RS_UNBLDRE: Unable to load application resource file /www/Assets/Skins/Boca Jrs/DIAC.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
+ERROR 2026-03-27 13:33:42,064 NE_RS_UNBLDRE: Unable to load application resource file /www/Assets/Skins/Boca Jrs/74HCU04 Not.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
+ERROR 2026-03-27 13:33:43,410 NE_RS_UNBLDRE: Unable to load application resource file /www/Assets/Skins/Boca Jrs/74HCU04 Not.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
+ERROR 2026-03-27 13:33:43,579 NE_RS_UNBLDRE: Unable to load application resource file /www/Assets/Skins/Boca Jrs/ASSD_CD4016B.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B
+ERROR 2026-03-27 13:33:43,596 NE_RS_UNBLDRE: Unable to load application resource file /www/Assets/Skins/Boca Jrs/ASSD_LF398.svg api\debug\debug.cpp:20 TC2@DESKTOP-GV8580B

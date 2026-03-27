@@ -262,22 +262,20 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--border-color);
-    border-radius: 50%;
-    font-size: 11px;
+    width: auto;
+    height: auto;
+    background: none;
+    border: none;
+    font-size: 14px;
     color: var(--accent);
     cursor: help;
-    transition: all 0.2s;
+    transition: transform 0.2s;
     margin-left: auto;
 }
 
 .help-btn:hover {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
+    transform: scale(1.2);
+    color: var(--accent-hover);
 }
 
 /* Tooltip */

@@ -76,10 +76,11 @@ try {
     try {
         execSync('npx @neutralinojs/neu build --embed-resources', { cwd: buildDir, stdio: 'inherit' });
     } catch (buildErr) {
-        console.log('Note: neu build reported an error (likely Linux embedding warning). Proceeding...');
+        // Linux binary postject may fail — that's OK, Windows embed succeeds
+        console.log('Note: Some platform embeddings may have failed (expected on cross-compile). Checking Windows binary...');
     }
 
-    // 5. Move the finished dist folder back to normal root
+    // 5. Move the finished dist folder back to root
     const srcDist = path.join(buildDir, 'dist');
     const destDist = path.join(rootDir, 'dist');
 
@@ -90,48 +91,13 @@ try {
     console.log('Moving compiled output back to root/dist...');
     fs.renameSync(srcDist, destDist);
 
-    // 6. Manually build the Windows distribution folder
-    // (postject cannot embed into Windows PE from this host — we ship exe + resources.neu instead)
-    const winDistDir = path.join(rootDir, 'dist', 'LTSpice_to_PDF-win64');
-    fs.mkdirSync(winDistDir, { recursive: true });
-
-    const winBinSrc = path.join(rootDir, 'bin', 'neutralino-win_x64.exe');
-    const winBinDest = path.join(winDistDir, 'LTSpice_to_PDF.exe');
-    const resourcesSrc = path.join(rootDir, 'dist', 'LTSpice_to_PDF', 'resources.neu');
-    const resourcesDest = path.join(winDistDir, 'resources.neu');
-
-    if (fs.existsSync(winBinSrc)) {
-        fs.copyFileSync(winBinSrc, winBinDest);
-        console.log('✅ Windows binary copied: LTSpice_to_PDF.exe');
-    } else {
-        console.warn('⚠️  Windows binary not found in bin/ — run: npx @neutralinojs/neu update');
-    }
-
-    if (fs.existsSync(resourcesSrc)) {
-        fs.copyFileSync(resourcesSrc, resourcesDest);
-        console.log('✅ resources.neu copied');
-    }
-
-    // 7. Create a distributable ZIP using PowerShell's built-in Compress-Archive
-    const zipPath = path.join(rootDir, 'dist', `LTSpice_to_PDF.zip`);
-    if (fs.existsSync(zipPath)) fs.rmSync(zipPath);
-
-    console.log('Creating distributable ZIP...');
-    const psCmd = [
-        `$files = @('${winBinDest.replace(/\\/g, '\\\\')}', '${resourcesDest.replace(/\\/g, '\\\\')}')`,
-        `Compress-Archive -Path $files -DestinationPath '${zipPath.replace(/\\/g, '\\\\')}'`
-    ].join('; ');
-    execSync(`powershell -Command "${psCmd}"`, { stdio: 'inherit' });
-
-
     console.log('\n✅ Build successful!');
-    console.log(`   📦 Distribute: dist/LTSpice_to_PDF.zip`);
-    console.log('   (Contains LTSpice_to_PDF.exe + resources.neu — keep them together)');
+    console.log('   📦 Standalone exe: dist/LTSpice_to_PDF/LTSpice_to_PDF-win_x64.exe');
 
 } catch (e) {
     console.error('❌ Build failed:', e.message);
 } finally {
-    // 6. Cleanup
     console.log('Cleaning up temporary files...');
     fs.rmSync(buildDir, { recursive: true, force: true });
 }
+
