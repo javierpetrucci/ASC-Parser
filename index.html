@@ -22,6 +22,7 @@
 
     <!-- Web Interface Script -->
     <script src="app.js" defer></script>
+    <script src="neutralino.js"></script>
 </head>
 
 <body>
@@ -78,8 +79,20 @@
                 <div class="hint-icon">📄</div>
                 <p>Drag & drop your .asc</p>
                 <input type="file" id="file-input" accept=".asc" style="display: none;">
-                <button id="browse-btn" class="secondary-btn" style="margin-bottom: 0.5rem;">or Browse Files...</button>
-                <button id="batch-btn" class="secondary-btn" style="display: none; border-color: var(--accent); color: var(--accent);">Batch Process Folder...</button>
+                <button id="browse-btn" class="secondary-btn">or Browse Files...</button>
+            </div>
+
+            <div id="batch-box" class="options-area" style="display: none; padding-top: 1rem;">
+                <h3 class="section-title">Batch Process</h3>
+                <div class="folder-selector" id="select-origin-btn" title="Click to select Origin folder">
+                    <span class="folder-label">📁 Origin:</span>
+                    <span class="folder-name" id="origin-folder-name">None</span>
+                </div>
+                <div class="folder-selector" id="select-dest-btn" title="Click to select Destination folder" style="margin-top: 0.5rem;">
+                    <span class="folder-label">📁 Dest:</span>
+                    <span class="folder-name" id="dest-folder-name">None</span>
+                </div>
+                <button id="run-batch-btn" class="secondary-btn" style="margin-top: 0.8rem; border-color: var(--accent); color: var(--accent);" disabled>Run batch conversion</button>
             </div>
 
             <footer class="sidebar-footer">

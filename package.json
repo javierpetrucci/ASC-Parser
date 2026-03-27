@@ -4,8 +4,8 @@
   "description": "LTSpice to PDF renderer",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "build": "electron-builder --win"
+    "start": "npx @neutralinojs/neu run",
+    "build": "node build_desktop.js"
   },
   "build": {
     "appId": "com.ascparser.desktop",

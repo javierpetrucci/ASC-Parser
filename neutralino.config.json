@@ -1,0 +1,47 @@
+{
+    "applicationId": "com.ascparser.desktop",
+    "version": "1.0.0",
+    "defaultMode": "window",
+    "port": 0,
+    "documentRoot": "/",
+    "url": "/",
+    "enableServer": true,
+    "enableNativeAPI": true,
+    "tokenSecurity": "one-time",
+    "logging": {
+        "enabled": true,
+        "writeToLogFile": true
+    },
+    "nativeAllowList": [
+        "os.*",
+        "filesystem.*",
+        "app.*",
+        "window.*"
+    ],
+    "modes": {
+        "window": {
+            "title": "LTSpice to PDF",
+            "width": 1200,
+            "height": 800,
+            "minWidth": 800,
+            "minHeight": 600,
+            "fullScreen": false,
+            "alwaysOnTop": false,
+            "icon": "/Assets/UI/favicon/favicon-256x256.png",
+            "enableInspector": false,
+            "borderless": false,
+            "maximize": true,
+            "hidden": false,
+            "resizable": true,
+            "exitProcessOnClose": true
+        }
+    },
+    "cli": {
+        "binaryName": "LTSpice_to_PDF",
+        "resourcesPath": "/",
+        "extensionsPath": "/extensions/",
+        "clientLibrary": "/neutralino.js",
+        "binaryVersion": "5.6.0",
+        "clientVersion": "5.5.0"
+    }
+}

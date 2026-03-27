@@ -1,0 +1,3 @@
+npx @neutralinojs/neu run
+
+npx @neutralinojs/neu build

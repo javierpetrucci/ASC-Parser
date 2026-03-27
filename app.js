@@ -115,19 +115,71 @@ downloadBtn.addEventListener('click', () => {
     }
 });
 
-// Electron Batch Processing
-const batchBtn = document.getElementById('batch-btn');
-if (window.electronAPI && batchBtn) {
-    batchBtn.style.display = 'block';
-    batchBtn.addEventListener('click', async () => {
-        const sourceFolder = await window.electronAPI.selectFolder({ title: 'Select Source Folder (containing .asc files)' });
-        if (!sourceFolder) return;
+// Neutralino Batch Processing
+const batchBox = document.getElementById('batch-box');
+const originBtn = document.getElementById('select-origin-btn');
+const destBtn = document.getElementById('select-dest-btn');
+const runBatchBtn = document.getElementById('run-batch-btn');
+const originNameSpan = document.getElementById('origin-folder-name');
+const destNameSpan = document.getElementById('dest-folder-name');
+
+let batchOriginPath = null;
+let batchDestPath = null;
+
+function updateBatchUI() {
+    if (batchOriginPath) {
+        originNameSpan.innerText = batchOriginPath.split(/[\\/]/).pop() || batchOriginPath;
+    }
+    if (batchDestPath) {
+        destNameSpan.innerText = batchDestPath.split(/[\\/]/).pop() || batchDestPath;
+    }
+    if (batchOriginPath && batchDestPath) {
+        runBatchBtn.disabled = false;
+    }
+}
+
+// Initialize Neutralino if the native desktop wrapper is detected
+if (window.Neutralino) {
+    Neutralino.init();
+    
+    // UI COSMETIC: Change Download button to Export for native desktop experience
+    if (downloadBtn) downloadBtn.innerText = 'Export PDF';
+    
+    // UI COSMETIC: Change browse files to single file
+    if (browseBtn) browseBtn.innerText = 'Single file';
+
+    if (batchBox) {
+        batchBox.style.display = 'block';
         
-        const destFolder = await window.electronAPI.selectFolder({ title: 'Select Destination Folder (for .pdf generated files)' });
-        if (!destFolder) return;
-        
-        await processBatch(sourceFolder, destFolder);
-    });
+        // Restore from memory if exists
+        batchOriginPath = localStorage.getItem('asc-batch-origin') || null;
+        batchDestPath = localStorage.getItem('asc-batch-dest') || null;
+        updateBatchUI();
+
+        originBtn.addEventListener('click', async () => {
+            const folder = await window.Neutralino.os.showFolderDialog('Select Origin Folder');
+            if (folder) {
+                batchOriginPath = folder;
+                localStorage.setItem('asc-batch-origin', folder);
+                updateBatchUI();
+            }
+        });
+
+        destBtn.addEventListener('click', async () => {
+            const folder = await window.Neutralino.os.showFolderDialog('Select Destination Folder');
+            if (folder) {
+                batchDestPath = folder;
+                localStorage.setItem('asc-batch-dest', folder);
+                updateBatchUI();
+            }
+        });
+
+        runBatchBtn.addEventListener('click', async () => {
+            if (batchOriginPath && batchDestPath) {
+                await processBatch(batchOriginPath, batchDestPath);
+            }
+        });
+    }
 }
 
 // ── 2. Controller Logic ──────────────────────────────────────────
@@ -255,13 +307,51 @@ async function processFile(file) {
     }
 }
 
+// Recursively search for .asc files using the Neutralino native API
+async function scanFolderForAsc(dir, fileList = []) {
+    let entries;
+    try { entries = await window.Neutralino.filesystem.readDirectory(dir); } 
+    catch (e) { return fileList; }
+    
+    for (const entry of entries) {
+        if (entry.entry === '.' || entry.entry === '..') continue;
+        const fullPath = dir + (dir.endsWith('/') || dir.endsWith('\\') ? '' : '/') + entry.entry;
+        
+        if (entry.type === 'DIRECTORY') {
+            await scanFolderForAsc(fullPath, fileList);
+        } else if (entry.type === 'FILE' && entry.entry.toLowerCase().endsWith('.asc')) {
+            fileList.push(fullPath);
+        }
+    }
+    return fileList;
+}
+
+// Ensure remote folders exist recursively
+async function ensureDestDir(destPath) {
+    // Basic fallback folder creation spanning absolute drive paths
+    let parts = destPath.replace(/\\/g, '/').split('/');
+    let currentPath = parts.shift(); // e.g., "C:" or ""
+    
+    // Ignore empty leading split artifacts (e.g. from "//" or initial empty root)
+    if (currentPath === "") currentPath = "/"; 
+    
+    for (const part of parts) {
+        if (part === "") continue;
+        
+        currentPath = currentPath === "/" ? `/${part}` : `${currentPath}/${part}`;
+        try {
+            await window.Neutralino.filesystem.createDirectory(currentPath);
+        } catch(e) { /* ignore already exists error */ }
+    }
+}
+
 async function processBatch(sourceFolder, destFolder) {
     welcomeMsg.innerHTML = `<h3>Batch Processing...</h3><p>Scanning folder...</p>`;
     welcomeMsg.style.display = 'block';
     pdfContainer.style.display = 'none';
     
     try {
-        const files = await window.electronAPI.findAscFiles(sourceFolder);
+        const files = await scanFolderForAsc(sourceFolder);
         if (files.length === 0) {
             welcomeMsg.innerHTML = `<h3>Done</h3><p>No .asc files found in that directory.</p>`;
             return;
@@ -273,12 +363,22 @@ async function processBatch(sourceFolder, destFolder) {
             const filename = filePath.split(/[\\/]/).pop().replace(/\.[^/.]+$/, "");
             
             welcomeMsg.innerHTML = `<h3>Processing ${i+1}/${files.length}</h3><p>${filename}.asc</p>`;
-            // Allow UI to refresh
             await new Promise(r => setTimeout(r, 10));
 
             try {
-                const buffer = await window.electronAPI.readFile(filePath);
-                const bytes = new Uint8Array(buffer);
+                // Determine relative path for output reconstruction
+                let relativePath = filePath;
+                if (filePath.startsWith(sourceFolder)) {
+                    relativePath = filePath.substring(sourceFolder.length);
+                }
+                const relativePdfPath = relativePath.replace(/\.asc$/i, '.pdf');
+                
+                const finalPdfPath = (destFolder + '/' + relativePdfPath).replace(/\\/g, '/').replace(/\/\//g, '/');
+                
+                // Read via Neutralino native API
+                const rawBuffer = await window.Neutralino.filesystem.readBinaryFile(filePath);
+                // Neutralino returns an ArrayBuffer for binary files.
+                const bytes = new Uint8Array(rawBuffer);
                 
                 let encoding = 'windows-1252'; 
                 if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
@@ -298,7 +398,14 @@ async function processBatch(sourceFolder, destFolder) {
                 };
                 
                 const pdfBytes = await window.LTSpiceEngine.render(scene, assets, filename, options);
-                await window.electronAPI.savePdf(filePath, pdfBytes, sourceFolder, destFolder);
+                
+                // Ensure output directory exists then write
+                const destFileFolder = finalPdfPath.substring(0, finalPdfPath.lastIndexOf('/'));
+                await ensureDestDir(destFileFolder);
+
+                // writeBinaryFile expects ArrayBuffer
+                await window.Neutralino.filesystem.writeBinaryFile(finalPdfPath, pdfBytes.buffer ? pdfBytes.buffer : pdfBytes);
+                
                 successCount++;
             } catch (fileErr) {
                 console.error(`Error processing ${filename}:`, fileErr);
