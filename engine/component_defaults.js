@@ -24,16 +24,16 @@ const COMPONENT_DEFAULTS = {
     // ── Passive Components ──────────────────────────────────────────────
     res: {
         R0: { 0: { ox: 36, oy: 40, align: 'Left' }, 3: { ox: 36, oy: 76, align: 'Left' } },
-        R90: { 0: { ox: -2, oy: 56, align: 'VBottom' }, 3: { ox: 32, oy: 56, align: 'VTop' } },
+        R90: { 0: { ox: 2, oy: 56, align: 'VBottom' }, 3: { ox: 29, oy: 56, align: 'VTop' } },
         R180: { 0: { ox: 36, oy: 71, align: 'Left' }, 3: { ox: 36, oy: 37, align: 'Left' } },
-        R270: { 0: { ox: 34, oy: 56, align: 'VTop' }, 3: { ox: 0, oy: 56, align: 'VBottom' } },
+        R270: { 0: { ox: 30, oy: 56, align: 'VTop' }, 3: { ox: 3, oy: 56, align: 'VBottom' } },
     },
 
     cap: {
         R0: { 0: { ox: 33, oy: 5, align: 'Left' }, 3: { ox: 33, oy: 59, align: 'Left' } },
-        R90: { 0: { ox: -14, oy: 32, align: 'VBottom' }, 3: { ox: 42, oy: 32, align: 'VTop' } },
+        R90: { 0: { ox: -11, oy: 32, align: 'VBottom' }, 3: { ox: 40, oy: 32, align: 'VTop' } },
         R180: { 0: { ox: 33, oy: 56, align: 'Left' }, 3: { ox: 33, oy: 6, align: 'Left' } },
-        R270: { 0: { ox: 45, oy: 32, align: 'VTop' }, 3: { ox: -10, oy: 32, align: 'VBottom' } },
+        R270: { 0: { ox: 43, oy: 32, align: 'VTop' }, 3: { ox: -8, oy: 32, align: 'VBottom' } },
     },
 
     ind: {
