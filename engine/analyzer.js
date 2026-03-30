@@ -5,7 +5,7 @@
 async function fetchAsy(componentPath) {
     // We map this to "Assets/Component Symbols/[cleanedPath].asy"
     const cleanedPath = componentPath.replace(/\\/g, '/');
-    const url = `Assets/Component Symbols/${cleanedPath}.asy`;
+    const url = `Assets/Component Symbols/${cleanedPath}.asy?t=${Date.now()}`;
 
     try {
         const response = await fetch(url);
@@ -17,7 +17,11 @@ async function fetchAsy(componentPath) {
 }
 
 function parseAsy(asyText) {
-    const lines = asyText.split(/\r?\n/);
+    // Split on all three common line ending conventions:
+    //   \r\n  Windows
+    //   \r    old Mac OS 9 (bare CR, no LF) — critical for LTSpice .asy files from older exports
+    //   \n    Unix
+    const lines = asyText.split(/\r\n|\r|\n/);
     const asyData = {
         windows: {},
         attrs: {},
@@ -26,7 +30,8 @@ function parseAsy(asyText) {
             rectangles: [],
             circles: [],
             arcs: [],
-            texts: []
+            texts: [],
+            pins: []
         }
     };
 
@@ -43,7 +48,8 @@ function parseAsy(asyText) {
                     ox: parseFloat(parts[2]),
                     oy: parseFloat(parts[3]),
                     align: parts[4],
-                    fontSize: parseInt(parts[5])
+                    fontSize: parseInt(parts[5]),
+                    isHidden: parts[4] === 'Invisible' || (parts.length >= 7 && parts[6] === '0')
                 };
             }
         } else if (type === 'SYMATTR') {
@@ -83,8 +89,12 @@ function parseAsy(asyText) {
             if (parts.length >= 5) {
                 const align = parts[3];
                 const fontSize = parseFloat(parts[4]);
-                const headerLen = [type, parts[1], parts[2], align, parts[4]].join(' ').length;
-                const content = line.substring(line.indexOf(parts[4]) + parts[4].length).trim();
+                
+                // Skip the first 5 elements (type, x, y, align, fontSize) 
+                // to extract the true text content, avoiding `indexOf` collisions with coordinates
+                const match = line.match(/^\s*\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+(.*)$/);
+                const content = match ? match[1].trim() : '';
+
                 asyData.graphics.texts.push({
                     x: parseFloat(parts[1]),
                     y: parseFloat(parts[2]),
@@ -92,6 +102,23 @@ function parseAsy(asyText) {
                     fontSize: fontSize,
                     content: content
                 });
+            }
+        } else if (type === 'PIN') {
+            if (parts.length >= 5) {
+                asyData.graphics.pins.push({
+                    x: parseFloat(parts[1]),
+                    y: parseFloat(parts[2]),
+                    align: parts[3],
+                    offset: parseFloat(parts[4]),
+                    attrs: {}
+                });
+            }
+        } else if (type === 'PINATTR') {
+            if (parts.length >= 3 && asyData.graphics.pins.length > 0) {
+                const attrName = parts[1];
+                const attrValue = line.substring(line.indexOf(attrName) + attrName.length).trim();
+                const lastPin = asyData.graphics.pins[asyData.graphics.pins.length - 1];
+                lastPin.attrs[attrName] = attrValue;
             }
         }
     }

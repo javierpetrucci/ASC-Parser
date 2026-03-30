@@ -1,5 +1,5 @@
 function parseAsc(text) {
-    const lines = text.split(/\r?\n/);
+    const lines = text.split(/\r\n|\r|\n/);
     const scene = {
         wires: [],
         symbols: [],
@@ -71,7 +71,8 @@ function parseAsc(text) {
                     offsetX: parseFloat(parts[2]),
                     offsetY: parseFloat(parts[3]),
                     alignment: parts[4],
-                    fontSize: parseInt(parts[5])
+                    fontSize: parseInt(parts[5]),
+                    isHidden: parts[4] === 'Invisible' || (parts.length >= 7 && parts[6] === '0')
                 });
             }
         } else if (type === 'SYMATTR') {

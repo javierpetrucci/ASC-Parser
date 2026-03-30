@@ -223,6 +223,8 @@ async function prepareAssets(scene) {
 
     // Discover needed SVGs
     const neededTypes = new Set();
+    neededTypes.add('intersection');
+    
     for (const sym of scene.symbols) {
         const basename = sym.type.split('\\').pop().split('/').pop();
         neededTypes.add(basename);

@@ -84,6 +84,14 @@ function getWindowText(sym, index) {
         // Special formatting rules for res, cap, ind values (index 3)
         if (['res', 'cap', 'ind'].includes(basename) && val) {
             let workingVal = val.trim();
+            
+            // Check if it's just the default placeholder letter; if so skip unit append
+            if ((basename === 'res' && workingVal.toUpperCase() === 'R') ||
+                (basename === 'cap' && workingVal.toUpperCase() === 'C') ||
+                (basename === 'ind' && workingVal.toUpperCase() === 'L')) {
+                return workingVal;
+            }
+
             // Step 1: Remove trailing units from source (F, H, Hy) for cap/ind
             if (basename === 'cap' && workingVal.toLowerCase().endsWith('f')) {
                 workingVal = workingVal.substring(0, workingVal.length - 1).trim();
@@ -109,13 +117,7 @@ function getWindowText(sym, index) {
             if (basename === 'ind') return workingVal + 'Hy';
         }
 
-        if (val) return val;
-
-        const defaults = {
-            res: 'R', cap: 'C', ind: 'L', diode: 'D', zener: 'D', voltage: 'V', current: 'I', signal: 'V',
-            e: 'E', e2: 'E', g: 'G', g2: 'G', npn: 'NPN', pnp: 'PNP', nmos: 'NMOS', pmos: 'PMOS', njf: 'NJF', pjf: 'PJF'
-        };
-        return defaults[basename] || '';
+        return val;
     }
     if (index === 39) return sym.attrs['SpiceLine'] || sym.asyData?.attrs?.['SpiceLine'] || '';
     if (index === 40) return sym.attrs['SpiceLine2'] || sym.asyData?.attrs?.['SpiceLine2'] || '';
@@ -522,9 +524,12 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                 }
 
                 if (pathStarted && pathPoints.length > 1) {
-                    const mode = resolveDrawMode(fill, hasStroke, pathHasZ);
-                    const lStyle = mode === 'FD-stroke' ? 'FD' : mode === 'F-only' ? 'F' : 'S';
                     const start = pathPoints[0];
+                    const end = pathPoints[pathPoints.length - 1];
+                    const isEmotionallyClosed = pathHasZ || (Math.abs(start.x - end.x) < 0.001 && Math.abs(start.y - end.y) < 0.001);
+                    
+                    const mode = resolveDrawMode(fill, hasStroke, isEmotionallyClosed);
+                    const lStyle = mode === 'FD-stroke' ? 'FD' : mode === 'F-only' ? 'F' : 'S';
                     const segments = [];
                     for (let j = 1; j < pathPoints.length; j++) {
                         segments.push([pathPoints[j].x - pathPoints[j - 1].x, pathPoints[j].y - pathPoints[j - 1].y]);
@@ -541,21 +546,33 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
 }
 
 function findIncomingWireDirection(x, y, wires) {
+    const incoming = new Set();
     for (const w of wires) {
         if (w.x1 === x && w.y1 === y) {
-            if (w.x2 < x) return 'left';
-            if (w.x2 > x) return 'right';
-            if (w.y2 < y) return 'top';
-            if (w.y2 > y) return 'bottom';
+            if (w.x2 < x) incoming.add('left');
+            else if (w.x2 > x) incoming.add('right');
+            else if (w.y2 < y) incoming.add('top');
+            else if (w.y2 > y) incoming.add('bottom');
         }
         if (w.x2 === x && w.y2 === y) {
-            if (w.x1 < x) return 'left';
-            if (w.x1 > x) return 'right';
-            if (w.y1 < y) return 'top';
-            if (w.y1 > y) return 'bottom';
+            if (w.x1 < x) incoming.add('left');
+            else if (w.x1 > x) incoming.add('right');
+            else if (w.y1 < y) incoming.add('top');
+            else if (w.y1 > y) incoming.add('bottom');
         }
     }
-    return 'top'; // default
+
+    if (incoming.size <= 1) {
+        return incoming.values().next().value || 'top';
+    }
+
+    // When 2 or more wires are present, place the flag away from the incoming wires.
+    // Empty space priority: Top space -> Bottom space -> Left space -> Right space.
+    // (Note: To place text at Top space, we act as if the wire came from 'bottom')
+    if (!incoming.has('top')) return 'bottom';
+    if (!incoming.has('bottom')) return 'top';
+    if (!incoming.has('left')) return 'right';
+    return 'left';
 }
 
 function drawLTSpiceText(doc, text, x, y, alignment, ptSize) {
@@ -782,13 +799,46 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         });
     }
 
-    // 4.5 Draw Wires
+    // 4.5 Draw Wires and Intersections
     doc.setLineDashPattern([], 0); // Reset dash style
     doc.setLineWidth(1.5);
     doc.setDrawColor(0, 0, 0); // Black (was #000080)
+
+    const wirePointsCount = new Map();
+
     for (const w of scene.wires) {
         if (isNaN(w.x1) || isNaN(w.y1) || isNaN(w.x2) || isNaN(w.y2)) continue;
         doc.line(w.x1 - minX, w.y1 - minY, w.x2 - minX, w.y2 - minY);
+        
+        const p1 = `${w.x1},${w.y1}`;
+        const p2 = `${w.x2},${w.y2}`;
+        wirePointsCount.set(p1, (wirePointsCount.get(p1) || 0) + 1);
+        wirePointsCount.set(p2, (wirePointsCount.get(p2) || 0) + 1);
+    }
+
+    // Draw an intersection dot for any coordinate shared by >= 3 wire endpoints
+    if (assets.svgStrings && assets.svgStrings.has('intersection')) {
+        const intersectionSvg = assets.svgStrings.get('intersection');
+        for (const [key, count] of wirePointsCount.entries()) {
+            if (count >= 3) {
+                const [xStr, yStr] = key.split(',');
+                const x = parseFloat(xStr);
+                const y = parseFloat(yStr);
+                drawSvgToPdf(doc, intersectionSvg, x, y, 'R0', minX, minY);
+            }
+        }
+    } else {
+        // Fallback natively drawn square if the SVG is explicitly missing
+        doc.setFillColor(0, 0, 0);
+        for (const [key, count] of wirePointsCount.entries()) {
+            if (count >= 3) {
+                const [xStr, yStr] = key.split(',');
+                const x = parseFloat(xStr) - minX;
+                const y = parseFloat(yStr) - minY;
+                // 8pt diameter -> radius 4pt
+                doc.ellipse(x, y, 4, 4, 'F');
+            }
+        }
     }
 
     // 5. Draw Symbols & SVGs
@@ -796,6 +846,24 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
     for (const sym of scene.symbols) {
         doc.setLineDashPattern([], 0); // Reset for each symbol to prevent state leakage
         const basename = sym.type.split('\\').pop().split('/').pop();
+
+        // Build the ASY-space → PDF-space transform for this symbol.
+        // Used for both ASY-fallback body drawing AND pin label rendering.
+        const symIsMirrored = sym.orientation.startsWith('M');
+        const symRotPart = symIsMirrored ? 'R' + sym.orientation.slice(1) : sym.orientation;
+        let symAngleRad = 0;
+        if (symRotPart === 'R90') symAngleRad = Math.PI / 2;
+        else if (symRotPart === 'R180') symAngleRad = Math.PI;
+        else if (symRotPart === 'R270') symAngleRad = -Math.PI / 2;
+        const symBaseTx = sym.x - minX;
+        const symBaseTy = sym.y - minY;
+        const transformAsyPoint = (px, py) => {
+            const cosA = Math.cos(symAngleRad), sinA = Math.sin(symAngleRad);
+            let rx = px * cosA - py * sinA;
+            let ry = px * sinA + py * cosA;
+            if (symIsMirrored) rx = -rx;
+            return { x: symBaseTx + rx, y: symBaseTy + ry };
+        };
 
         // Draw the body (via SVG String Native Parser or ASY geometry)
         if (assets.svgStrings && assets.svgStrings.has(basename)) {
@@ -809,22 +877,6 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
             doc.setLineCap(1);
             doc.setLineJoin(1);
 
-            // Re-use transformPoint logic for ASY graphics
-            const isMirrored = sym.orientation.startsWith('M');
-            const rotPart = isMirrored ? 'R' + sym.orientation.slice(1) : sym.orientation;
-            let angleRad = 0;
-            if (rotPart === 'R90') angleRad = Math.PI / 2;
-            else if (rotPart === 'R180') angleRad = Math.PI;
-            else if (rotPart === 'R270') angleRad = -Math.PI / 2;
-            const baseTx = sym.x - minX;
-            const baseTy = sym.y - minY;
-            const transformAsyPoint = (px, py) => {
-                const cosA = Math.cos(angleRad), sinA = Math.sin(angleRad);
-                let rx = px * cosA - py * sinA;
-                let ry = px * sinA + py * cosA;
-                if (isMirrored) rx = -rx;
-                return { x: baseTx + rx, y: baseTy + ry };
-            };
 
             for (const r of g.rectangles) {
                 applyPdfLineStyle(doc, r.style);
@@ -876,6 +928,59 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
 
                 doc.text(t.content, p.x, p.y, { align: alignPdf, baseline: baselinePdf, angle: isVertical ? 90 : 0 });
             }
+
+
+        }
+
+        // ── PIN Labels (always rendered, regardless of SVG or ASY body) ──────
+        if (sym.asyData && sym.asyData.graphics && sym.asyData.graphics.pins) {
+            for (const pin of sym.asyData.graphics.pins) {
+                const p = transformAsyPoint(pin.x, pin.y);
+
+
+
+                if (!pin.attrs.PinName) continue;
+                if (pin.align.toUpperCase() === 'NONE') continue;
+
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(19.5); // "all pins must have text size 1.5" -> 1.5 * 13pt = 19.5pt
+
+                // Normalize alignment
+                let normAlign = pin.align;
+                if (normAlign.toUpperCase() === 'LEFT') normAlign = 'Left';
+                else if (normAlign.toUpperCase() === 'RIGHT') normAlign = 'Right';
+                else if (normAlign.toUpperCase() === 'TOP') normAlign = 'Top';
+                else if (normAlign.toUpperCase() === 'BOTTOM') normAlign = 'Bottom';
+                else if (normAlign.toUpperCase() === 'VLEFT') normAlign = 'VLeft';
+                else if (normAlign.toUpperCase() === 'VRIGHT') normAlign = 'VRight';
+                else if (normAlign.toUpperCase() === 'VTOP') normAlign = 'VTop';
+                else if (normAlign.toUpperCase() === 'VBOTTOM') normAlign = 'VBottom';
+
+                const finalAlign = transformAlignment(normAlign, sym.orientation);
+                const isVertical = finalAlign.startsWith('V');
+                const baseAlign = isVertical ? finalAlign.slice(1) : finalAlign;
+
+                let px = p.x;
+                let py = p.y;
+                let alignPdf = 'left';
+                let baselinePdf = 'middle';
+                let angleRot = 0;
+
+                if (!isVertical) {
+                    if (baseAlign === 'Left')        { px += pin.offset; alignPdf = 'left';   baselinePdf = 'middle'; angleRot = 0; }
+                    else if (baseAlign === 'Right')  { px -= pin.offset; alignPdf = 'right';  baselinePdf = 'middle'; angleRot = 0; }
+                    else if (baseAlign === 'Top')    { py += pin.offset; alignPdf = 'center'; baselinePdf = 'top';    angleRot = 0; }
+                    else if (baseAlign === 'Bottom') { py -= pin.offset; alignPdf = 'center'; baselinePdf = 'bottom'; angleRot = 0; }
+                } else {
+                    if (baseAlign === 'Left')        { px += pin.offset; alignPdf = 'center'; baselinePdf = 'middle'; angleRot =  90; }
+                    else if (baseAlign === 'Right')  { px -= pin.offset; alignPdf = 'center'; baselinePdf = 'middle'; angleRot = -90; }
+                    else if (baseAlign === 'Top')    { py += pin.offset; alignPdf = 'right';  baselinePdf = 'middle'; angleRot =  90; }
+                    else if (baseAlign === 'Bottom') { py -= pin.offset; alignPdf = 'right';  baselinePdf = 'middle'; angleRot = -90; }
+                }
+
+                if (options.showTextAnchors) drawDebugSquare(doc, px, py);
+                doc.text(pin.attrs.PinName, px, py, { align: alignPdf, baseline: baselinePdf, angle: angleRot });
+            }
         }
 
         // ── Window (text label) Resolution ─────────────────────────────────
@@ -900,20 +1005,16 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         //
         // An index is only rendered if it has a non-empty text value to show.
 
-        // --- Step 1: Collect the full set of candidate window indexes ---
-        // Start from the ASY file (ground truth for which attributes exist),
-        // then add any extra ones explicitly provided in the ASC.
-        const candidateIndexes = new Set();
-        if (sym.asyData && sym.asyData.windows) {
-            for (const idx of Object.keys(sym.asyData.windows)) {
-                candidateIndexes.add(parseInt(idx));
-            }
-        }
-        for (const win of sym.windows) {
-            candidateIndexes.add(win.index); // ASC-explicit always a candidate
-        }
+        // --- Step 1 & 2: Resolve which windows to render and where ---
+        //
+        // A window is ONLY rendered if its position is explicitly defined in one of:
+        //   - The ASY file's WINDOW declarations
+        //   - The ASC file's explicit WINDOW lines
+        //   - component_defaults.js (override mode only)
+        //
+        // Merely having a SYMATTR (e.g. InstName) is NOT sufficient — the component
+        // must also declare a WINDOW position for that index.
 
-        // --- Step 2: Resolve coordinates for each candidate index ---
         const effectiveWindows = new Map();
         const table = COMPONENT_DEFAULTS[basename];
         const useOverride = options.overrideAnchors && !!table;
@@ -928,25 +1029,33 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
                 : sym.orientation;
             const defaults = table[exactKey] || table[rotEquiv] || table['R0'];
             if (defaults) {
-                for (const [idx, def] of Object.entries(defaults)) {
-                    effectiveWindows.set(parseInt(idx), { ox: def.ox, oy: def.oy, align: def.align, fontSize: 2 });
+                for (const [idxStr, def] of Object.entries(defaults)) {
+                    const idx = parseInt(idxStr);
+                    let isHidden = false;
+                    
+                    const asyWin = sym.asyData?.windows?.[idx];
+                    if (asyWin && asyWin.isHidden) isHidden = true;
+                    
+                    const ascWin = sym.windows.find(w => w.index === idx);
+                    if (ascWin) isHidden = ascWin.isHidden;
+
+                    effectiveWindows.set(idx, { ox: def.ox, oy: def.oy, align: def.align, fontSize: 2, isHidden: isHidden });
                 }
             }
         } else {
-            // Normal mode: ASY base, then ASC overrides on top
-            // Layer 1: ASY coordinates (base)
-            for (const idx of candidateIndexes) {
-                const asyWin = sym.asyData?.windows?.[idx];
-                if (asyWin) {
-                    effectiveWindows.set(idx, { ox: asyWin.ox, oy: asyWin.oy, align: asyWin.align, fontSize: asyWin.fontSize });
-                } else {
-                    // No ASY coordinate for this index; start with a zero placeholder
-                    effectiveWindows.set(idx, { ox: 0, oy: 0, align: 'Left', fontSize: 2 });
+            // Normal mode: position-driven. Only windows with an explicitly defined
+            // position are added. No implicit defaults or (0,0) placeholders.
+            
+            // Layer 1: ASY WINDOW positions (base)
+            if (sym.asyData && sym.asyData.windows) {
+                for (const [idxStr, asyWin] of Object.entries(sym.asyData.windows)) {
+                    const idx = parseInt(idxStr);
+                    effectiveWindows.set(idx, { ox: asyWin.ox, oy: asyWin.oy, align: asyWin.align, fontSize: asyWin.fontSize, isHidden: asyWin.isHidden });
                 }
             }
-            // Layer 2: ASC-explicit windows override ASY values
+            // Layer 2: ASC explicit WINDOW lines override ASY positions (or add new ones)
             for (const win of sym.windows) {
-                effectiveWindows.set(win.index, { ox: win.offsetX, oy: win.offsetY, align: win.alignment, fontSize: win.fontSize });
+                effectiveWindows.set(win.index, { ox: win.offsetX, oy: win.offsetY, align: win.alignment, fontSize: win.fontSize, isHidden: win.isHidden });
             }
         }
 
@@ -958,6 +1067,7 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
 
         // --- Step 4: Render each window that has a non-empty text value ---
         for (const [idx, win] of effectiveWindows.entries()) {
+            if (win.isHidden) continue; // Skip permanently hidden windows
             const text = getWindowText(sym, idx);
             if (!text) continue; // Skip indexes with no value to display
 
@@ -1054,10 +1164,10 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
                     doc.line(fx + pt1.x, fy + pt1.y, fx + pt2.x, fy + pt2.y);
                 }
             } else {
-                // Draw named node native fallback (small box + text)
+                // Draw named node native fallback (small cirsle + text)
                 doc.setFillColor(255, 255, 255);
                 doc.setDrawColor(0, 0, 0);
-                doc.rect(fx - 4, fy - 4, 8, 8, 'FD');
+                doc.ellipse(fx, fy, 4, 4, 'FD');
 
                 doc.setTextColor(0, 0, 0);
                 doc.setFontSize(13);

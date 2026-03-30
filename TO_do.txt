@@ -1,1 +1,4 @@
-The window can have a "hidden" attribute, in this case it should not be rendered, never.
+IGNORE THE FOLLOWING, do not implement:
+
+Bug Xtal pos texto
+Bug LM 311, la pos del U1 corta con el cable

@@ -245,7 +245,10 @@ const COMPONENT_DEFAULTS = {
     },
 
     Gain_Block: {
-        R0: { 3: { ox: -171, oy: 48, align: 'Left' } },
+        R0: { 3: { ox: -139, oy: 48, align: 'Center' } },
+        R90: { 3: { ox: -139, oy: 48, align: 'Center' } },
+        R180: { 3: { ox: -139, oy: 48, align: 'Center' } },
+        R270: { 3: { ox: -139, oy: 48, align: 'Center' } },
     },
 
     // ── Transistors (R0 only → all orientations derived) ────────────────
@@ -343,41 +346,41 @@ const COMPONENT_DEFAULTS = {
 
     TL082: {
         R0: { 0: { ox: -109, oy: 85, align: 'Left' }, 3: { ox: -109, oy: 14, align: 'Left' } },
-        R90: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -90, oy: 19, align: 'VLeft' } },
+        R90: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -92, oy: 19, align: 'VLeft' } },
         R180: { 0: { ox: -109, oy: 85, align: 'Left' }, 3: { ox: -109, oy: 14, align: 'Left' } },
-        R270: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -90, oy: 19, align: 'VLeft' } },
+        R270: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -92, oy: 19, align: 'VLeft' } },
     },
 
     LM741: {
         R0: { 0: { ox: -109, oy: 85, align: 'Left' }, 3: { ox: -109, oy: 14, align: 'Left' } },
-        R90: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -90, oy: 19, align: 'VLeft' } },
+        R90: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -92, oy: 19, align: 'VLeft' } },
         R180: { 0: { ox: -109, oy: 85, align: 'Left' }, 3: { ox: -109, oy: 14, align: 'Left' } },
-        R270: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -90, oy: 19, align: 'VLeft' } },
+        R270: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -92, oy: 19, align: 'VLeft' } },
     },
 
     LF398: {
         R0: { 0: { ox: -109, oy: 85, align: 'Left' }, 3: { ox: -109, oy: 14, align: 'Left' } },
-        R90: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -90, oy: 19, align: 'VLeft' } },
+        R90: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -92, oy: 19, align: 'VLeft' } },
         R180: { 0: { ox: -109, oy: 85, align: 'Left' }, 3: { ox: -109, oy: 14, align: 'Left' } },
-        R270: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -90, oy: 19, align: 'VLeft' } },
+        R270: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -92, oy: 19, align: 'VLeft' } },
     },
     LM311: {
         R0: { 0: { ox: -109, oy: 85, align: 'Left' }, 3: { ox: -109, oy: 14, align: 'Left' } },
-        R90: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -90, oy: 19, align: 'VLeft' } },
+        R90: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -92, oy: 19, align: 'VLeft' } },
         R180: { 0: { ox: -109, oy: 85, align: 'Left' }, 3: { ox: -109, oy: 14, align: 'Left' } },
-        R270: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -90, oy: 19, align: 'VLeft' } },
+        R270: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -92, oy: 19, align: 'VLeft' } },
     },
     LM324: {
         R0: { 0: { ox: -109, oy: 85, align: 'Left' }, 3: { ox: -109, oy: 14, align: 'Left' } },
-        R90: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -90, oy: 19, align: 'VLeft' } },
+        R90: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -92, oy: 19, align: 'VLeft' } },
         R180: { 0: { ox: -109, oy: 85, align: 'Left' }, 3: { ox: -109, oy: 14, align: 'Left' } },
-        R270: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -90, oy: 19, align: 'VLeft' } },
+        R270: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -92, oy: 19, align: 'VLeft' } },
     },
     LM833: {
         R0: { 0: { ox: -109, oy: 85, align: 'Left' }, 3: { ox: -109, oy: 14, align: 'Left' } },
-        R90: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -90, oy: 19, align: 'VLeft' } },
+        R90: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -92, oy: 19, align: 'VLeft' } },
         R180: { 0: { ox: -109, oy: 85, align: 'Left' }, 3: { ox: -109, oy: 14, align: 'Left' } },
-        R270: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -90, oy: 19, align: 'VLeft' } },
+        R270: { 0: { ox: -92, oy: 74, align: 'VRight' }, 3: { ox: -92, oy: 19, align: 'VLeft' } },
     },
 
     //TCLib Special
@@ -435,6 +438,13 @@ const COMPONENT_DEFAULTS = {
         R90: { 3: { ox: 65, oy: 57, align: 'VTop' } },
         R180: { 3: { ox: 71, oy: 59, align: 'Left' } },
         R270: { 3: { ox: 65, oy: 57, align: 'VTop' } },
+    },
+
+    Vcc: {
+        R0: { 3: { ox: 27, oy: 16, align: 'Left' } },
+        R90: { 3: { ox: 20, oy: 16, align: 'VTop' } },
+        R180: { 3: { ox: 27, oy: 16, align: 'Left' } },
+        R270: { 3: { ox: 22, oy: 16, align: 'VTop' } },
     },
 
 }; // end COMPONENT_DEFAULTS

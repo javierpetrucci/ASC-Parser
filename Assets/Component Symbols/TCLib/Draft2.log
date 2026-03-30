@@ -1,0 +1,15 @@
+LTspice 24.1.9 for Windows
+Circuit: C:\_DATA\Desktop\ASC Parser\Assets\Component Symbols\TCLib\Draft2.net
+Start Time: Sun Mar 29 22:30:56 2026
+solver = Normal
+Maximum thread count: 12
+tnom = 27
+temp = 27
+method = trap
+.OP point found by inspection.
+Total elapsed time: 0.197 seconds.
+
+Files loaded:
+C:\_DATA\Desktop\ASC Parser\Assets\Component Symbols\TCLib\Draft2.net
+C:\Users\TC2\AppData\Local\LTspice\lib\sub\TCLib\OA_Signal.lib
+
