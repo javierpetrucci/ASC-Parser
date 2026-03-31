@@ -575,6 +575,27 @@ function findIncomingWireDirection(x, y, wires) {
     return 'left';
 }
 
+// Normalizes a PIN alignment keyword to the canonical mixed-case form used by
+// drawLTSpiceText, and returns the offset direction vector for that alignment.
+// The pin alignment is used as-is — no semantic translation is applied.
+//
+// Offset direction (away from anchor, in world space):
+//   Left   → +x,  Right  → -x,  Top    → +y,  Bottom → -y
+//   VLeft  → +x,  VRight → -x,  VTop   → +y,  VBottom→ -y
+function pinAlignmentToTextAlignment(pinAlign) {
+    switch (pinAlign.toUpperCase()) {
+        case 'LEFT':    return { textAlign: 'Left',    dx:  1, dy:  0 };
+        case 'RIGHT':   return { textAlign: 'Right',   dx: -1, dy:  0 };
+        case 'TOP':     return { textAlign: 'Top',     dx:  0, dy:  1 };
+        case 'BOTTOM':  return { textAlign: 'Bottom',  dx:  0, dy: -1 };
+        case 'VLEFT':   return { textAlign: 'VLeft',   dx:  0, dy: -1 };
+        case 'VRIGHT':  return { textAlign: 'VRight',  dx:  0, dy:  1 };
+        case 'VTOP':    return { textAlign: 'VTop',    dx:  1, dy:  0 };
+        case 'VBOTTOM': return { textAlign: 'VBottom', dx: -1, dy:  0 };
+        default:        return { textAlign: 'Left',    dx:  0, dy:  0 };
+    }
+}
+
 function drawLTSpiceText(doc, text, x, y, alignment, ptSize) {
     if (!text) return;
     doc.setFontSize(ptSize);
@@ -907,26 +928,10 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
                 doc.setTextColor(0, 0, 0);
                 const FONT_SIZE_MAP = { 0: 8, 1: 13, 2: 20, 3: 26, 4: 32, 5: 46, 6: 65, 7: 92 };
                 const ptSize = FONT_SIZE_MAP[t.fontSize] || 8;
-                doc.setFontSize(ptSize);
                 const finalAlign = transformAlignment(t.align, sym.orientation);
-                const isVertical = finalAlign.startsWith('V');
-                const baseAlign = isVertical ? finalAlign.slice(1) : finalAlign;
-
-                let alignPdf = 'left';
-                let baselinePdf = 'middle';
-                if (baseAlign === 'Left') alignPdf = 'left';
-                if (baseAlign === 'Right') alignPdf = 'right';
-                if (baseAlign === 'Center') alignPdf = 'center';
-                if (baseAlign === 'Top') { alignPdf = 'center'; baselinePdf = 'top'; }
-                if (baseAlign === 'Bottom') { alignPdf = 'center'; baselinePdf = 'bottom'; }
-
                 const p = transformAsyPoint(t.x, t.y);
-
-                if (options.showTextAnchors) {
-                    drawDebugSquare(doc, p.x, p.y);
-                }
-
-                doc.text(t.content, p.x, p.y, { align: alignPdf, baseline: baselinePdf, angle: isVertical ? 90 : 0 });
+                if (options.showTextAnchors) drawDebugSquare(doc, p.x, p.y);
+                drawLTSpiceText(doc, t.content, p.x, p.y, finalAlign, ptSize);
             }
 
 
@@ -935,51 +940,26 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         // ── PIN Labels (always rendered, regardless of SVG or ASY body) ──────
         if (sym.asyData && sym.asyData.graphics && sym.asyData.graphics.pins) {
             for (const pin of sym.asyData.graphics.pins) {
-                const p = transformAsyPoint(pin.x, pin.y);
-
-
-
                 if (!pin.attrs.PinName) continue;
                 if (pin.align.toUpperCase() === 'NONE') continue;
 
                 doc.setTextColor(0, 0, 0);
-                doc.setFontSize(19.5); // "all pins must have text size 1.5" -> 1.5 * 13pt = 19.5pt
+                const PIN_PT_SIZE = 19.5; // size 1.5 → 1.5 * 13pt
 
-                // Normalize alignment
-                let normAlign = pin.align;
-                if (normAlign.toUpperCase() === 'LEFT') normAlign = 'Left';
-                else if (normAlign.toUpperCase() === 'RIGHT') normAlign = 'Right';
-                else if (normAlign.toUpperCase() === 'TOP') normAlign = 'Top';
-                else if (normAlign.toUpperCase() === 'BOTTOM') normAlign = 'Bottom';
-                else if (normAlign.toUpperCase() === 'VLEFT') normAlign = 'VLeft';
-                else if (normAlign.toUpperCase() === 'VRIGHT') normAlign = 'VRight';
-                else if (normAlign.toUpperCase() === 'VTOP') normAlign = 'VTop';
-                else if (normAlign.toUpperCase() === 'VBOTTOM') normAlign = 'VBottom';
+                // Convert pin wire-direction alignment → general text alignment + offset direction
+                const { textAlign, dx, dy } = pinAlignmentToTextAlignment(pin.align);
 
-                const finalAlign = transformAlignment(normAlign, sym.orientation);
-                const isVertical = finalAlign.startsWith('V');
-                const baseAlign = isVertical ? finalAlign.slice(1) : finalAlign;
+                // Apply component orientation to both the pin position and the text alignment
+                const p = transformAsyPoint(pin.x, pin.y);
+                const finalAlign = transformAlignment(textAlign, sym.orientation);
 
-                let px = p.x;
-                let py = p.y;
-                let alignPdf = 'left';
-                let baselinePdf = 'middle';
-                let angleRot = 0;
+                // dx/dy are in local (ASY) space — rotate them through the component orientation.
+                const offsetVec = transformOffset(dx * pin.offset * 3, dy * pin.offset * 3, sym.orientation);
+                const tx = p.x + offsetVec.x;
+                const ty = p.y + offsetVec.y;
 
-                if (!isVertical) {
-                    if (baseAlign === 'Left')        { px += pin.offset; alignPdf = 'left';   baselinePdf = 'middle'; angleRot = 0; }
-                    else if (baseAlign === 'Right')  { px -= pin.offset; alignPdf = 'right';  baselinePdf = 'middle'; angleRot = 0; }
-                    else if (baseAlign === 'Top')    { py += pin.offset; alignPdf = 'center'; baselinePdf = 'top';    angleRot = 0; }
-                    else if (baseAlign === 'Bottom') { py -= pin.offset; alignPdf = 'center'; baselinePdf = 'bottom'; angleRot = 0; }
-                } else {
-                    if (baseAlign === 'Left')        { px += pin.offset; alignPdf = 'center'; baselinePdf = 'middle'; angleRot =  90; }
-                    else if (baseAlign === 'Right')  { px -= pin.offset; alignPdf = 'center'; baselinePdf = 'middle'; angleRot = -90; }
-                    else if (baseAlign === 'Top')    { py += pin.offset; alignPdf = 'right';  baselinePdf = 'middle'; angleRot =  90; }
-                    else if (baseAlign === 'Bottom') { py -= pin.offset; alignPdf = 'right';  baselinePdf = 'middle'; angleRot = -90; }
-                }
-
-                if (options.showTextAnchors) drawDebugSquare(doc, px, py);
-                doc.text(pin.attrs.PinName, px, py, { align: alignPdf, baseline: baselinePdf, angle: angleRot });
+                if (options.showTextAnchors) drawDebugSquare(doc, tx, ty);
+                drawLTSpiceText(doc, pin.attrs.PinName, tx, ty, finalAlign, PIN_PT_SIZE);
             }
         }
 

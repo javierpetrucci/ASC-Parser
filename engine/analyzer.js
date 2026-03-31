@@ -109,7 +109,7 @@ function parseAsy(asyText) {
                     x: parseFloat(parts[1]),
                     y: parseFloat(parts[2]),
                     align: parts[3],
-                    offset: parseFloat(parts[4]),
+                    offset: parseFloat(parts[4]) / 2,
                     attrs: {}
                 });
             }
