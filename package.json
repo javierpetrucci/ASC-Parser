@@ -5,7 +5,7 @@
   "main": "main.js",
   "scripts": {
     "start": "npx @neutralinojs/neu run",
-    "build": "node build_desktop.js"
+    "build": "node desktop/build_desktop.js"
   },
   "build": {
     "appId": "com.ascparser.desktop",

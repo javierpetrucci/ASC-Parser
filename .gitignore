@@ -1,5 +1,10 @@
 # Build outputs
 node_modules/
+.neu_build_temp/
+
+# Runtime logs
+neutralinojs.log
+dist/LTSpice_to_PDF/neutralinojs.log
 
 # Local development
 .DS_Store
