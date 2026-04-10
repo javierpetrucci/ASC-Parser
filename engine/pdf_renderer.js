@@ -1103,7 +1103,7 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
 
             if (!isGround) {
                 doc.setTextColor(0, 0, 0); // Black
-                doc.setFontSize(13); // Size 1 default mapping
+                doc.setFontSize(20); // Size 2 default mapping
 
                 let align = 'Top';
                 let ox = 0, oy = 0;
@@ -1116,7 +1116,7 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
                 const finalY = flag.y - minY + oy;
 
                 if (options.showTextAnchors) drawDebugSquare(doc, finalX, finalY);
-                drawLTSpiceText(doc, flag.name, finalX, finalY, align, 13);
+                drawLTSpiceText(doc, flag.name, finalX, finalY, align, 20);
             }
         } else {
             // Native fallback for ASY/None skin
@@ -1150,7 +1150,7 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
                 doc.ellipse(fx, fy, 4, 4, 'FD');
 
                 doc.setTextColor(0, 0, 0);
-                doc.setFontSize(13);
+                doc.setFontSize(20); // Size 2 default mapping
 
                 let align = 'Top';
                 let ox = 0, oy = 0;
