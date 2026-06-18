@@ -282,7 +282,19 @@ const COMPONENT_DEFAULTS = {
         R180: { 0: { ox: 75, oy: 34, align: 'Right' }, 3: { ox: 56, oy: 101, align: 'Left' } },
         R270: { 0: { ox: 53, oy: 49, align: 'VTop' }, 3: { ox: 81, oy: 49, align: 'VTop' } },
     },
+    nm_nobulk: {
+        R0: { 0: { ox: 75, oy: 35, align: 'Right' }, 3: { ox: 56, oy: 101, align: 'Left' } },
+        R90: { 0: { ox: 50, oy: 49, align: 'VTop' }, 3: { ox: 81, oy: 49, align: 'VTop' } },
+        R180: { 0: { ox: 75, oy: 34, align: 'Right' }, 3: { ox: 56, oy: 101, align: 'Left' } },
+        R270: { 0: { ox: 53, oy: 49, align: 'VTop' }, 3: { ox: 81, oy: 49, align: 'VTop' } },
+    },
     pmos: {
+        R0: { 0: { ox: 75, oy: 35, align: 'Right' }, 3: { ox: 56, oy: 101, align: 'Left' } },
+        R90: { 0: { ox: 50, oy: 49, align: 'VTop' }, 3: { ox: 81, oy: 49, align: 'VTop' } },
+        R180: { 0: { ox: 75, oy: 34, align: 'Right' }, 3: { ox: 56, oy: 101, align: 'Left' } },
+        R270: { 0: { ox: 53, oy: 49, align: 'VTop' }, 3: { ox: 81, oy: 49, align: 'VTop' } },
+    },
+    pm_nobulk: {
         R0: { 0: { ox: 75, oy: 35, align: 'Right' }, 3: { ox: 56, oy: 101, align: 'Left' } },
         R90: { 0: { ox: 50, oy: 49, align: 'VTop' }, 3: { ox: 81, oy: 49, align: 'VTop' } },
         R180: { 0: { ox: 75, oy: 34, align: 'Right' }, 3: { ox: 56, oy: 101, align: 'Left' } },
