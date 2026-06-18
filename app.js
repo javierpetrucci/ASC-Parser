@@ -11,12 +11,20 @@ const optDebugAnchors = document.getElementById('opt-debug-anchors');
 const optOverrideAnchors = document.getElementById('opt-override-anchors');
 const skinSelector = document.getElementById('skin-selector');
 
+const specContainer = document.getElementById('spec-container');
+const specContent = document.getElementById('spec-content');
+const viewSpecBtn = document.getElementById('view-spec-btn');
+const closeSpecBtn = document.getElementById('close-spec-btn');
+
 let currentPdfBlob = null;
 let currentFilename = 'schematic';
 let currentFileObj = null;
 
 // Initialize Skins Dropdown
 document.addEventListener('DOMContentLoaded', async () => {
+    // Scroll console to bottom so the cursor line is visible on load
+    if (consoleBox) consoleBox.scrollTop = consoleBox.scrollHeight;
+
     if (!skinSelector) return;
     try {
         const res = await fetch('Assets/Skins/skins.txt');
@@ -253,6 +261,43 @@ async function prepareAssets(scene) {
     return assets;
 }
 
+// ── Console Panel ────────────────────────────────────────────────
+const consoleLines  = document.getElementById('console-lines');
+const consoleBox    = document.getElementById('sidebar-console');
+
+// Pause auto-scroll while the user is hovering to read history
+let consoleHovered = false;
+if (consoleBox) {
+    consoleBox.addEventListener('mouseenter', () => { consoleHovered = true; });
+    consoleBox.addEventListener('mouseleave', () => {
+        consoleHovered = false;
+        // Snap back to bottom when they leave
+        consoleBox.scrollTop = consoleBox.scrollHeight;
+    });
+}
+
+/**
+ * Print a line to the sidebar console panel.
+ * @param {string} text
+ * @param {'dim'|'muted'|'normal'|'ok'|'err'} style
+ */
+function consolePrint(text, style = 'muted') {
+    if (!consoleLines) return;
+    const el = document.createElement('span');
+    el.className = `con-line con-line--${style}`;
+    el.textContent = text;
+    consoleLines.appendChild(el);
+
+    // Auto-scroll to bottom only if user isn't browsing history
+    if (consoleBox && !consoleHovered) {
+        consoleBox.scrollTop = consoleBox.scrollHeight;
+    }
+}
+
+
+/** Small async delay helper */
+const wait = (ms) => new Promise(r => setTimeout(r, ms));
+
 async function processFile(file) {
     if (!file.name.toLowerCase().endsWith('.asc')) {
         alert('Please drop a valid .asc file.');
@@ -261,56 +306,77 @@ async function processFile(file) {
 
     currentFilename = file.name.replace(/\.[^/.]+$/, "");
     currentFileObj = file;
-    
-    // Show loading state
-    welcomeMsg.innerHTML = '<h3>Rendering...</h3><p>Generating Vector PDF</p>';
-    welcomeMsg.style.display = 'block';
+
+    // Show loading state (hide PDF, welcome, and specification container)
+    if (specContainer) specContainer.style.display = 'none';
+    welcomeMsg.style.display = 'none';
     pdfContainer.style.display = 'none';
 
     try {
+        // ── Step 1: Read file ──────────────────────────────────────
+        consolePrint(`$ open  "${file.name}"`, 'dim');
+        consolePrint(`  reading file  [${(file.size / 1024).toFixed(1)} kB]`, 'muted');
+
         const buffer = await file.arrayBuffer();
         const bytes = new Uint8Array(buffer);
-        
-        // Detect encoding: LTSpice uses UTF-16LE (with BOM) or Windows-1252 (ANSI)
-        let encoding = 'windows-1252'; 
+
+        // ── Step 2: Detect encoding ────────────────────────────────
+        let encoding = 'windows-1252';
         if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
             encoding = 'utf-16le';
         }
-        
+        consolePrint(`  encoding       ${encoding}`, 'muted');
+
         const decoder = new TextDecoder(encoding);
         const text = decoder.decode(buffer);
-        
-        // 1. Parse ASC to Scene Sub-Graph 
+
+        // ── Step 3: Parse ASC ──────────────────────────────────────
+        consolePrint(`  parsing ASC tokens...`, 'normal');
+
         const scene = window.LTSpiceEngine.parse(text);
-        
-        // 2. Fetch Assets needed for this Scene
+
+        const wCount  = scene.wires.length;
+        const symCount = scene.symbols.length;
+        const txtCount = scene.texts.length;
+        consolePrint(`  wires:${wCount}  symbols:${symCount}  labels:${txtCount}`, 'dim');
+
+        // ── Step 4: Load assets ────────────────────────────────────
+        consolePrint(`  loading component SVGs...`, 'normal');
+
         const assets = await prepareAssets(scene);
-        
-        // 3. Render directly to PDF
-        // Read checkbox states
+
+        consolePrint(`  font + ${assets.svgStrings.size} symbol(s) cached`, 'dim');
+
+        // ── Step 5: Render to PDF ──────────────────────────────────
+        consolePrint(`  rendering PDF vectors...`, 'normal');
+
         const options = {
             canvasBasedOnRectangle: optCanvasRect ? optCanvasRect.checked : false,
             showTextAnchors: optDebugAnchors ? optDebugAnchors.checked : false,
             overrideAnchors: optOverrideAnchors ? optOverrideAnchors.checked : true
         };
         const pdfBytes = await window.LTSpiceEngine.render(scene, assets, currentFilename, options);
-        
-        // Use a File object instead of a Blob to "hint" the filename to the browser's PDF viewer
+
+        consolePrint(`  building blob URL...`, 'muted');
+
+        // ── Step 6: Update viewer ──────────────────────────────────
         currentPdfBlob = new File([pdfBytes], `${currentFilename}.pdf`, { type: 'application/pdf' });
-        
-        // 4. Update UI Viewer
         const blobUrl = URL.createObjectURL(currentPdfBlob);
         pdfContainer.innerHTML = `<iframe id="pdf-viewer" src="${blobUrl}#view=FitH" style="width:100%;height:100%;border:none;"></iframe>`;
-        
-        welcomeMsg.style.display = 'none';
+
         pdfContainer.style.display = 'block';
         downloadBtn.disabled = false;
-        
+
+        consolePrint(`[ OK ] done — ${currentFilename}.pdf`, 'ok');
+
     } catch (err) {
         console.error(err);
+        consolePrint(`[ERR] ${err.message}`, 'err');
         welcomeMsg.innerHTML = `<h3 style="color:var(--accent)">Error</h3><p>${err.message}</p>`;
+        welcomeMsg.style.display = 'block';
     }
 }
+
 
 // Recursively search for .asc files using the Neutralino native API
 async function scanFolderForAsc(dir, fileList = []) {
@@ -423,3 +489,262 @@ async function processBatch(sourceFolder, destFolder) {
         welcomeMsg.innerHTML = `<h3 style="color:var(--accent)">Error</h3><p>${err.message}</p>`;
     }
 }
+
+// ── Format Specification Document Viewer ─────────────────────────
+
+let specCachedMarkdown = null;
+
+function parseInlineElements(text) {
+    return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="spec-strong">$1</strong>')
+        .replace(/`(.*?)`/g, '<code class="spec-code">$1</code>')
+        .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" class="spec-link">$1</a>');
+}
+
+function renderSpecTable(headers, rows) {
+    let html = '<table class="spec-table">\n<thead>\n<tr>\n';
+    for (const h of headers) {
+        html += `<th class="spec-th">${parseInlineElements(h)}</th>\n`;
+    }
+    html += '</tr>\n</thead>\n<tbody>\n';
+    for (const r of rows) {
+        html += '<tr>\n';
+        for (const cell of r) {
+            html += `<td class="spec-td">${parseInlineElements(cell)}</td>\n`;
+        }
+        html += '</tr>\n';
+    }
+    html += '</tbody>\n</table>\n';
+    return html;
+}
+
+function parseMarkdown(md) {
+    // Escape HTML to prevent rendering injection, except for newlines
+    let html = md
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    // Extract code blocks and replace with placeholders
+    const codeBlocks = [];
+    html = html.replace(/```(.*?)\r?\n([\s\S]*?)```/g, (match, lang, code) => {
+        const index = codeBlocks.length;
+        codeBlocks.push(`<pre class="spec-code-block"><code class="language-${lang.trim()}">${code.trim()}</code></pre>`);
+        return `___CODE_BLOCK_PLACEHOLDER_${index}___`;
+    });
+
+    const lines = html.split(/\r\n|\r|\n/);
+    const result = [];
+    let inList = false;
+    let listType = null; // 'ul' or 'ol'
+    let inTable = false;
+    let tableHeaders = [];
+    let tableRows = [];
+
+    for (let line of lines) {
+        const trimmed = line.trim();
+
+        // If it's a code block placeholder, preserve it
+        if (trimmed.startsWith('___CODE_BLOCK_PLACEHOLDER_') && trimmed.endsWith('___')) {
+            if (inList) { result.push(`</${listType}>`); inList = false; }
+            if (inTable) { result.push(renderSpecTable(tableHeaders, tableRows)); inTable = false; }
+            result.push(line);
+            continue;
+        }
+
+        // Handle Horizontal Rule
+        if (trimmed === '---' || trimmed === '***') {
+            if (inList) { result.push(`</${listType}>`); inList = false; }
+            if (inTable) { result.push(renderSpecTable(tableHeaders, tableRows)); inTable = false; }
+            result.push('<hr class="spec-hr">');
+            continue;
+        }
+
+        // Handle Headers
+        const headerMatch = line.match(/^(#{1,6})\s+(.*)$/);
+        if (headerMatch) {
+            if (inList) { result.push(`</${listType}>`); inList = false; }
+            if (inTable) { result.push(renderSpecTable(tableHeaders, tableRows)); inTable = false; }
+            const level = headerMatch[1].length;
+            const text = headerMatch[2];
+            result.push(`<h${level} class="spec-h${level}">${text}</h${level}>`);
+            continue;
+        }
+
+        // Handle Blockquotes
+        const quoteMatch = line.match(/^&gt;\s*(.*)$/);
+        if (quoteMatch) {
+            if (inList) { result.push(`</${listType}>`); inList = false; }
+            if (inTable) { result.push(renderSpecTable(tableHeaders, tableRows)); inTable = false; }
+            result.push(`<blockquote class="spec-blockquote">${quoteMatch[1]}</blockquote>`);
+            continue;
+        }
+
+        // Handle Tables
+        if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+            if (inList) { result.push(`</${listType}>`); inList = false; }
+            const cells = trimmed.split('|').map(c => c.trim()).filter((c, i, arr) => i > 0 && i < arr.length - 1);
+            
+            // Check if it's separator row (e.g. |---|---|)
+            const isSeparator = cells.every(c => /^:?-+:?$/.test(c));
+            if (isSeparator) {
+                continue;
+            }
+
+            if (!inTable) {
+                inTable = true;
+                tableHeaders = cells;
+                tableRows = [];
+            } else {
+                tableRows.push(cells);
+            }
+            continue;
+        } else {
+            if (inTable) {
+                result.push(renderSpecTable(tableHeaders, tableRows));
+                inTable = false;
+            }
+        }
+
+        // Handle Lists
+        const ulMatch = line.match(/^(\s*)[-\*+]\s+(.*)$/);
+        const olMatch = line.match(/^(\s*)\d+\.\s+(.*)$/);
+
+        if (ulMatch) {
+            if (!inList || listType !== 'ul') {
+                if (inList) result.push(`</${listType}>`);
+                result.push('<ul class="spec-ul">');
+                inList = true;
+                listType = 'ul';
+            }
+            result.push(`<li class="spec-li">${ulMatch[2]}</li>`);
+            continue;
+        } else if (olMatch) {
+            if (!inList || listType !== 'ol') {
+                if (inList) result.push(`</${listType}>`);
+                result.push('<ol class="spec-ol">');
+                inList = true;
+                listType = 'ol';
+            }
+            result.push(`<li class="spec-li">${olMatch[2]}</li>`);
+            continue;
+        } else {
+            if (inList && trimmed === '') {
+                result.push(`</${listType}>`);
+                inList = false;
+            }
+        }
+
+        // Handle empty line
+        if (trimmed === '') {
+            result.push('<div class="spec-space"></div>');
+            continue;
+        }
+
+        // Normal paragraph
+        result.push(`<p class="spec-p">${line}</p>`);
+    }
+
+    if (inList) result.push(`</${listType}>`);
+    if (inTable) result.push(renderSpecTable(tableHeaders, tableRows));
+
+    let parsedHtml = result.join('\n');
+    parsedHtml = parseInlineElements(parsedHtml);
+
+    // Substitute placeholders back
+    for (let i = 0; i < codeBlocks.length; i++) {
+        parsedHtml = parsedHtml.replace(`___CODE_BLOCK_PLACEHOLDER_${i}___`, codeBlocks[i]);
+    }
+
+    return parsedHtml;
+}
+
+async function openSpecViewer() {
+    if (!specContainer || !specContent) return;
+    
+    welcomeMsg.style.display = 'none';
+    pdfContainer.style.display = 'none';
+    specContainer.style.display = 'flex';
+    
+    if (specCachedMarkdown) {
+        specContent.innerHTML = parseMarkdown(specCachedMarkdown);
+        return;
+    }
+    
+    specContent.innerHTML = `<p class="spec-p" style="color: var(--accent);">Loading specification...</p>`;
+    
+    try {
+        let text = '';
+        if (window.Neutralino && window.NL_PORT) {
+            text = await window.Neutralino.filesystem.readFile('LTSpice_ASC_ASY_Format_Specification.md');
+        } else {
+            let response = await fetch('LTSpice_ASC_ASY_Format_Specification.md');
+            if (!response.ok) {
+                throw new Error(`Local fetch status: ${response.status}`);
+            }
+            text = await response.text();
+        }
+        specCachedMarkdown = text;
+        specContent.innerHTML = parseMarkdown(text);
+        consolePrint('[ OK ] Loaded local format specification document', 'ok');
+    } catch (localErr) {
+        console.warn('Local fetch failed, trying GitHub raw fallback:', localErr);
+        
+        try {
+            const githubUrl = 'https://raw.githubusercontent.com/javierpetrucci/ASC-Parser/main/LTSpice_ASC_ASY_Format_Specification.md';
+            let response = await fetch(githubUrl);
+            if (!response.ok) {
+                throw new Error(`GitHub fetch status: ${response.status}`);
+            }
+            const text = await response.text();
+            specCachedMarkdown = text;
+            specContent.innerHTML = parseMarkdown(text);
+            consolePrint('[ OK ] Loaded format specification from GitHub', 'ok');
+        } catch (githubErr) {
+            console.error('All fetch attempts failed:', githubErr);
+            specContent.innerHTML = `
+                <h2 class="spec-h2" style="color:#ff4444;">Failed to Load Specification</h2>
+                <p class="spec-p">Could not retrieve the specification file from local server or GitHub.</p>
+                <p class="spec-p">Error details: ${githubErr.message || githubErr}</p>
+                <p class="spec-p"><a href="https://github.com/javierpetrucci/ASC-Parser/blob/main/LTSpice_ASC_ASY_Format_Specification.md" target="_blank" class="spec-link">Click here to open on GitHub</a></p>
+            `;
+            consolePrint('[ERR] Failed to load format specification document', 'err');
+        }
+    }
+}
+
+function closeSpecViewer() {
+    if (specContainer) {
+        specContainer.style.display = 'none';
+    }
+    if (currentPdfBlob) {
+        pdfContainer.style.display = 'block';
+    } else {
+        welcomeMsg.style.display = 'block';
+    }
+}
+
+// Bind button clicks
+if (viewSpecBtn) {
+    viewSpecBtn.addEventListener('click', openSpecViewer);
+}
+
+if (closeSpecBtn) {
+    closeSpecBtn.addEventListener('click', closeSpecViewer);
+}
+
+// Intercept footer link
+const footerSpecLink = document.querySelector('a[href*="LTSpice_ASC_ASY_Format_Specification.md"]');
+if (footerSpecLink) {
+    footerSpecLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        openSpecViewer();
+    });
+}
+
+// Close on escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeSpecViewer();
+    }
+});

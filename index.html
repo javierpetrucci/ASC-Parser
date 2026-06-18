@@ -15,12 +15,10 @@
         content="High-performance, vector-based PDF generator for LTSpice schematics. Achieve 1:1 visual parity with professional output.">
     <meta property="og:title" content="LTSpice to PDF Converter">
     <meta property="og:description" content="Convert LTSpice .asc files to high-quality vector PDFs.">
-    <meta property="og:image" content="Assets/UI/Head.png">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="LTSpice to PDF Converter">
     <meta name="twitter:description" content="Professional schematic rendering and PDF export for LTSpice.">
-    <meta name="twitter:image" content="Assets/UI/Head.png">
 
     <!-- jsPDF loaded for PDF Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -47,7 +45,20 @@
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="logo-area">
-                <img src="Assets/UI/Head.png" alt="LTSpice Renderer Header" class="header-logo">
+                <div class="terminal-logo">
+                    <!-- Oscilloscope trace SVG - hand-drawn feel -->
+                    <img src="Assets/UI/Header Hand.svg" alt="LTSpice to PDF" class="terminal-logo__wave">
+                </div>
+            </div>
+
+            <!-- Fake terminal console -->
+            <div id="sidebar-console" class="sidebar-console">
+                <div id="console-lines">
+                    <span class="con-line con-line--dim">$ ltspice_to_pdf --init</span>
+                    <span class="con-line con-line--ok">[ OK ] Engine loaded</span>
+                    <span class="con-line con-line--ok">[ OK ] Skin profiles ready</span>
+                    <span class="con-line con-line--muted">&gt; Waiting for input...</span>
+                </div>
             </div>
 
             <div class="menu-area">
@@ -71,19 +82,19 @@
                     <input type="checkbox" id="opt-canvas-rect">
                     Rectangle based canvas
                     <span class="help-btn"
-                        data-tooltip="Determine the canvas size based on a circumscribing rectangle drawn in the schematic.">ℹ️</span>
+                        data-tooltip="Determine the canvas size based on a circumscribing rectangle drawn in the schematic.">i</span>
                 </label>
                 <label class="checkbox-label">
                     <input type="checkbox" id="opt-debug-anchors">
                     Text Anchor Point
                     <span class="help-btn"
-                        data-tooltip="Display actual text anchor points, for debugging purposes.">ℹ️</span>
+                        data-tooltip="Display actual text anchor points, for debugging purposes.">i</span>
                 </label>
                 <label class=" checkbox-label">
                     <input type="checkbox" id="opt-override-anchors" checked>
                     Override text anchors
                     <span class="help-btn"
-                        data-tooltip="Applies optimal visual text positioning, overriding coordinate values from the ASC file for recognized components.">ℹ️</span>
+                        data-tooltip="Applies optimal visual text positioning, overriding coordinate values from the ASC file for recognized components.">i</span>
                 </label>
             </div>
 
@@ -130,9 +141,21 @@
         <!-- Main PDF Viewer Area -->
         <main class="viewer-pane">
             <div id="welcome-msg">
-                <div class="landing-icon">⚡</div>
-                <h3>Ready to Render</h3>
-                <p>Load an LTSpice (.asc) schematic.</p>
+                <span class="term-line"><span class="term-prompt">$</span> ltspice_to_pdf --info</span>
+                <span class="term-line term-line--ok">Desarrollado por: </span>
+                <span class="term-line term-line--ok">Javier Petrucci y Santiago López</span>
+                <span class="term-line"><span class="term-prompt">$</span> show-specification</span>
+                <span class="term-line" style="margin-bottom: 0.4rem;">
+                    <button id="view-spec-btn" class="inline-link-btn">Reverse Engineered ASC/ASY Format Specification</button>
+                </span>
+                <span class="term-line"><span class="term-prompt">&gt;</span> Drop an ASY file anywhere on the screen...<span class="cursor"></span></span>
+            </div>
+            <div id="spec-container" class="spec-container" style="display: none;">
+                <div class="spec-header">
+                    <span class="spec-title">LTSpice ASC/ASY Format Specification</span>
+                    <button id="close-spec-btn" class="spec-close-btn">&times; Close</button>
+                </div>
+                <div id="spec-content" class="spec-content"></div>
             </div>
             <div id="pdf-container">
                 <!-- <object id="pdf-viewer" type="application/pdf"> will be injected here -->
