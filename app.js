@@ -298,6 +298,31 @@ function consolePrint(text, style = 'muted') {
 /** Small async delay helper */
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
+let consoleSequenceId = 0;
+
+async function animateConsoleSequence(sequenceId, fileName, fileSize, encoding, wCount, symCount, txtCount, svgCacheSize, currentFilename) {
+    const lines = [
+        { text: `$ open  "${fileName}"`, style: 'dim', delay: 45 },
+        { text: `  reading file  [${(fileSize / 1024).toFixed(1)} kB]`, style: 'muted', delay: 35 },
+        { text: `  encoding       ${encoding}`, style: 'muted', delay: 35 },
+        { text: `  parsing ASC tokens...`, style: 'normal', delay: 45 },
+        { text: `  wires:${wCount}  symbols:${symCount}  labels:${txtCount}`, style: 'dim', delay: 35 },
+        { text: `  loading component SVGs...`, style: 'normal', delay: 45 },
+        { text: `  font + ${svgCacheSize} symbol(s) cached`, style: 'dim', delay: 35 },
+        { text: `  rendering PDF vectors...`, style: 'normal', delay: 45 },
+        { text: `  building blob URL...`, style: 'muted', delay: 30 },
+        { text: `[ OK ] done — ${currentFilename}.pdf`, style: 'ok', delay: 0 }
+    ];
+
+    for (const line of lines) {
+        if (sequenceId !== consoleSequenceId) return; // Terminate if another file starts processing
+        consolePrint(line.text, line.style);
+        if (line.delay > 0) {
+            await wait(line.delay);
+        }
+    }
+}
+
 async function processFile(file) {
     if (!file.name.toLowerCase().endsWith('.asc')) {
         alert('Please drop a valid .asc file.');
@@ -312,44 +337,35 @@ async function processFile(file) {
     welcomeMsg.style.display = 'none';
     pdfContainer.style.display = 'none';
 
-    try {
-        // ── Step 1: Read file ──────────────────────────────────────
-        consolePrint(`$ open  "${file.name}"`, 'dim');
-        consolePrint(`  reading file  [${(file.size / 1024).toFixed(1)} kB]`, 'muted');
+    // Increment console sequence counter to cancel any active background console animations
+    consoleSequenceId++;
+    const mySequenceId = consoleSequenceId;
 
+    try {
+        // ── 1. Read file ──────────────────────────────────────
         const buffer = await file.arrayBuffer();
         const bytes = new Uint8Array(buffer);
 
-        // ── Step 2: Detect encoding ────────────────────────────────
+        // ── 2. Detect encoding ────────────────────────────────
         let encoding = 'windows-1252';
         if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
             encoding = 'utf-16le';
         }
-        consolePrint(`  encoding       ${encoding}`, 'muted');
 
         const decoder = new TextDecoder(encoding);
         const text = decoder.decode(buffer);
 
-        // ── Step 3: Parse ASC ──────────────────────────────────────
-        consolePrint(`  parsing ASC tokens...`, 'normal');
-
+        // ── 3. Parse ASC ──────────────────────────────────────
         const scene = window.LTSpiceEngine.parse(text);
 
         const wCount  = scene.wires.length;
         const symCount = scene.symbols.length;
         const txtCount = scene.texts.length;
-        consolePrint(`  wires:${wCount}  symbols:${symCount}  labels:${txtCount}`, 'dim');
 
-        // ── Step 4: Load assets ────────────────────────────────────
-        consolePrint(`  loading component SVGs...`, 'normal');
-
+        // ── 4. Load assets ────────────────────────────────────
         const assets = await prepareAssets(scene);
 
-        consolePrint(`  font + ${assets.svgStrings.size} symbol(s) cached`, 'dim');
-
-        // ── Step 5: Render to PDF ──────────────────────────────────
-        consolePrint(`  rendering PDF vectors...`, 'normal');
-
+        // ── 5. Render to PDF ──────────────────────────────────
         const options = {
             canvasBasedOnRectangle: optCanvasRect ? optCanvasRect.checked : false,
             showTextAnchors: optDebugAnchors ? optDebugAnchors.checked : false,
@@ -357,9 +373,7 @@ async function processFile(file) {
         };
         const pdfBytes = await window.LTSpiceEngine.render(scene, assets, currentFilename, options);
 
-        consolePrint(`  building blob URL...`, 'muted');
-
-        // ── Step 6: Update viewer ──────────────────────────────────
+        // ── 6. Update viewer ──────────────────────────────────
         currentPdfBlob = new File([pdfBytes], `${currentFilename}.pdf`, { type: 'application/pdf' });
         const blobUrl = URL.createObjectURL(currentPdfBlob);
         pdfContainer.innerHTML = `<iframe id="pdf-viewer" src="${blobUrl}#view=FitH" style="width:100%;height:100%;border:none;"></iframe>`;
@@ -367,7 +381,18 @@ async function processFile(file) {
         pdfContainer.style.display = 'block';
         downloadBtn.disabled = false;
 
-        consolePrint(`[ OK ] done — ${currentFilename}.pdf`, 'ok');
+        // ── 7. Run animated log sequence concurrently ────────
+        animateConsoleSequence(
+            mySequenceId,
+            file.name,
+            file.size,
+            encoding,
+            wCount,
+            symCount,
+            txtCount,
+            assets.svgStrings.size,
+            currentFilename
+        );
 
     } catch (err) {
         console.error(err);
