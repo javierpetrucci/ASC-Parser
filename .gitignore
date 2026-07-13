@@ -5,6 +5,10 @@ node_modules/
 # Runtime logs
 neutralinojs.log
 dist/LTSpice_to_PDF/neutralinojs.log
+*.log
+
+# LTSpice simulation artifacts
+*.raw
 
 # Local development
 .DS_Store
