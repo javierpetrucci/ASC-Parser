@@ -73,13 +73,37 @@ function transformAlignment(alignment, orientation) {
 // Component window defaults are loaded from engine/component_defaults.js
 // (must be included before this script in the HTML)
 
+// Transistor-family basenames. Their .asy files carry a bare type-name
+// placeholder as the default SYMATTR Value (e.g. npn.asy → "NPN"), which
+// conveys nothing the symbol shape doesn't already show. For these, the
+// .asy Value is never used as a fallback — only an explicit SYMATTR Value
+// line in the .asc counts as a real, user-supplied value.
+const TRANSISTOR_BASENAMES = new Set([
+    'npn', 'npn2', 'npn3', 'npn4',
+    'pnp', 'pnp2', 'pnp4',
+    'nmos', 'nmos4', 'nm_nobulk',
+    'pmos', 'pmos4', 'pm_nobulk',
+    'njf',
+    'pjf',
+]);
 
+// Resolves a SYMATTR attribute's display value. An explicit SYMATTR line in
+// the .asc always wins, even when its value is empty — an explicitly empty
+// value means the user intentionally cleared it, and should render as
+// nothing rather than falling back to the .asy default. The .asy value is
+// only used as a fallback when the attribute was never set in the .asc.
+function resolveAttrValue(sym, attrName) {
+    if (attrName in sym.attrs) return sym.attrs[attrName];
+    return sym.asyData?.attrs?.[attrName] || '';
+}
 
 function getWindowText(sym, index) {
-    if (index === 0) return sym.attrs['InstName'] || sym.asyData?.attrs?.['InstName'] || '';
+    if (index === 0) return resolveAttrValue(sym, 'InstName');
     if (index === 3) {
-        let val = sym.attrs['Value'] || sym.asyData?.attrs?.['Value'] || '';
         const basename = sym.type.split('\\').pop().split('/').pop().toLowerCase();
+        let val = TRANSISTOR_BASENAMES.has(basename)
+            ? (sym.attrs['Value'] || '')
+            : resolveAttrValue(sym, 'Value');
 
         // Special formatting rules for res, cap, ind values (index 3)
         if (['res', 'cap', 'ind'].includes(basename) && val) {
@@ -119,9 +143,9 @@ function getWindowText(sym, index) {
 
         return val;
     }
-    if (index === 39) return sym.attrs['SpiceLine'] || sym.asyData?.attrs?.['SpiceLine'] || '';
-    if (index === 40) return sym.attrs['SpiceLine2'] || sym.asyData?.attrs?.['SpiceLine2'] || '';
-    if (index === 123) return sym.attrs['Value2'] || sym.asyData?.attrs?.['Value2'] || '';
+    if (index === 39) return resolveAttrValue(sym, 'SpiceLine');
+    if (index === 40) return resolveAttrValue(sym, 'SpiceLine2');
+    if (index === 123) return resolveAttrValue(sym, 'Value2');
     return '';
 }
 

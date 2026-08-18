@@ -1,3 +1,9 @@
+// LTSpice writes a literal empty pair of quotes to represent an
+// explicitly-cleared attribute value.
+function normalizeAttrValue(raw) {
+    return raw === '""' ? '' : raw;
+}
+
 function parseAsc(text) {
     const lines = text.split(/\r\n|\r|\n/);
     const scene = {
@@ -79,7 +85,7 @@ function parseAsc(text) {
             if (currentSymbol && parts.length >= 3) {
                 const attrName = parts[1];
                 const attrValue = line.substring(line.indexOf(attrName) + attrName.length).trim();
-                currentSymbol.attrs[attrName] = attrValue;
+                currentSymbol.attrs[attrName] = normalizeAttrValue(attrValue);
             }
         } else if (type === 'FLAG') {
             currentSymbol = null;

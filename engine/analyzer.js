@@ -56,7 +56,7 @@ function parseAsy(asyText) {
             if (parts.length >= 3) {
                 const attrName = parts[1];
                 const attrValue = line.substring(line.indexOf(attrName) + attrName.length).trim();
-                asyData.attrs[attrName] = attrValue;
+                asyData.attrs[attrName] = normalizeAttrValue(attrValue);
             }
         } else if (type === 'LINE' || type === 'RECTANGLE' || type === 'CIRCLE') {
             if (parts.length >= 6 && parts[1] === 'Normal') {
@@ -118,7 +118,7 @@ function parseAsy(asyText) {
                 const attrName = parts[1];
                 const attrValue = line.substring(line.indexOf(attrName) + attrName.length).trim();
                 const lastPin = asyData.graphics.pins[asyData.graphics.pins.length - 1];
-                lastPin.attrs[attrName] = attrValue;
+                lastPin.attrs[attrName] = normalizeAttrValue(attrValue);
             }
         }
     }
