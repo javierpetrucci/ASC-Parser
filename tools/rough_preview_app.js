@@ -9,6 +9,7 @@ var PAD = 10;          // symbol units of breathing room around the artwork
 var GRID = 16;         // LTSpice's own grid
 
 var PEN_CONTROLS = [
+    { k: 'penWidth',   min: 0.5, max: 4,   step: 0.1,  label: 'Pen width',   hint: 'One nib for the whole skin, whatever the source artwork used.' },
     { k: 'warp',       min: 0,   max: 2,   step: 0.05, label: 'Warp',        hint: 'One distortion field per symbol. Keeps touching parts touching.' },
     { k: 'warpPeriod', min: 20,  max: 140, step: 5,    label: 'Warp period', hint: 'Its wavelength, in units. Near symbol size bends the whole shape.' },
     { k: 'tremor',     min: 0,   max: 1.2, step: 0.02, label: 'Tremor',      hint: 'Hand unsteadiness along a stroke.' },
@@ -23,7 +24,8 @@ var SHAPE_CONTROLS = [
     { k: 'cornerAngle', min: 5,  max: 90, step: 5,   label: 'Corner break',    hint: 'Turn angle that splits a stroke, so corners cross.' },
     { k: 'seamOverlap', min: 0,  max: 45, step: 1,   label: 'Circle overlap',  hint: 'How far a closed sweep runs past its own start.' },
     { k: 'rotateMax',   min: 0,  max: 8,  step: 0.25, label: 'Mark rotation',  hint: 'Rigid skew of small filled marks (arrowheads, glyphs).' },
-    { k: 'hairline',    min: 0,  max: 2,  step: 0.05, label: 'Hairline cutoff', hint: 'Stroke-width at or below this gets warp only.' }
+    { k: 'ribbonMax',   min: 0,  max: 6,  step: 0.1,  label: 'Ribbon width max', hint: 'Widest filled sliver still read as a drawn line, not a blob.' },
+    { k: 'outlineMin',  min: 0,  max: 20, step: 0.5,  label: 'Outline min size', hint: 'Smallest solid shape traced as an outline instead of left solid.' }
 ];
 
 var state = {};

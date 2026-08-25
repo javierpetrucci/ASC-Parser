@@ -10,6 +10,15 @@
         "8137"
       ],
       "port": 8137
+    },
+    {
+      "name": "asc-parser-node",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "tools/serve.js"
+      ],
+      "port": 8000,
+      "autoPort": true
     }
   ]
 }

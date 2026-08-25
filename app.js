@@ -25,6 +25,10 @@ let currentFilename = 'schematic';
 let isRendering = false;
 let currentFileObj = null;
 
+// Drawn procedurally from the Default artwork rather than loaded from a folder,
+// so it is offered alongside the real skins but never appears in skins.txt.
+const ROUGH_SKIN = 'TC2_Rough';
+
 // Initialize Skins Dropdown
 document.addEventListener('DOMContentLoaded', async () => {
     // Scroll console to bottom so the cursor line is visible on load
@@ -45,6 +49,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     skinSelector.appendChild(option);
                 }
                 
+                // The procedural skin. It has no folder of its own: it redraws
+                // Default's artwork through engine/rough_pen.js at render time,
+                // seeded per placement, so no two components come out identical.
+                const roughOption = document.createElement('option');
+                roughOption.value = ROUGH_SKIN;
+                roughOption.textContent = ROUGH_SKIN;
+                skinSelector.appendChild(roughOption);
+
                 // Add a "None" option to fallback entirely to ASY rendering
                 const noneOption = document.createElement('option');
                 noneOption.value = 'None';
@@ -271,18 +283,23 @@ async function prepareAssets(scene) {
 
     // Fetch them using the selected skin
     const selectedSkin = skinSelector ? skinSelector.value : 'Default';
-    
+
+    // TC2_Rough ships no artwork of its own - it reads Default's and redraws it
+    // freehand in the renderer, which is why it can never drift out of date.
+    assets.rough = selectedSkin === ROUGH_SKIN;
+    const sourceSkin = assets.rough ? 'Default' : selectedSkin;
+
     const promises = Array.from(neededTypes).map(async (type) => {
         if (selectedSkin === 'None') return; // Skip fetching, force ASY fallback
         try {
             // Fetch with the on-disk casing, but key the map case-insensitively so
             // the renderer's lookup cannot miss on a differently-cased .asc.
-            const res = await fetch(`Assets/Skins/${selectedSkin}/${type}.svg${ASSET_VERSION}`);
+            const res = await fetch(`Assets/Skins/${sourceSkin}/${type}.svg${ASSET_VERSION}`);
             if (res.ok) {
                 const text = await res.text();
                 assets.svgStrings.set(type.toLowerCase(), text);
             } else {
-                console.warn(`[SKIN] ${selectedSkin} has no ${type}.svg (falling back to .asy geometry)`);
+                console.warn(`[SKIN] ${sourceSkin} has no ${type}.svg (falling back to .asy geometry)`);
             }
         } catch (e) {
             console.warn(`Could not load SVG for ${type}`);

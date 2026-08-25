@@ -15,7 +15,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const RoughPen = require('./rough_pen.js');
+const RoughPen = require('../engine/rough_pen.js');
 
 const rootDir = path.join(__dirname, '..');
 const skinDir = path.join(rootDir, 'Assets', 'Skins', 'Default');
@@ -149,7 +149,7 @@ if (badCmd.length) {
 // ── Emit the page ───────────────────────────────────────────────────────────
 
 const template = fs.readFileSync(path.join(__dirname, 'rough_preview_template.html'), 'utf8');
-const penSrc = fs.readFileSync(path.join(__dirname, 'rough_pen.js'), 'utf8');
+const penSrc = fs.readFileSync(path.join(rootDir, 'engine', 'rough_pen.js'), 'utf8');
 const appSrc = fs.readFileSync(path.join(__dirname, 'rough_preview_app.js'), 'utf8');
 
 // </script> anywhere inside inlined data would close the tag early.

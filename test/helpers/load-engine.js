@@ -15,6 +15,7 @@ const ENGINE_FILES = [
     'engine/parser.js',
     'engine/analyzer.js',
     'engine/component_defaults.js',
+    'engine/rough_pen.js',
     'engine/pdf_renderer.js',
     'engine/index.js',
 ];

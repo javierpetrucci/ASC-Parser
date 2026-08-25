@@ -230,12 +230,14 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
             const sm = rule.match(/([^{]+)\{([^}]+)\}/);
             if (sm) {
                 const selectors = sm[1].split(',').map(s => s.trim().replace('.', ''));
-                let sw = null, fill = null, stroke = null, fontSize = null;
+                let sw = null, fill = null, stroke = null, fontSize = null, fillRule = null;
                 const fsMatch = sm[2].match(/font-size\s*:\s*([\d.]+)px/);
                 if (fsMatch) fontSize = parseFloat(fsMatch[1]);
                 const swMatch = sm[2].match(/stroke-width\s*:\s*([\d.]+)px/);
                 const fillMatch = sm[2].match(/(?:^|;)\s*fill\s*:\s*([^;}\/]+)/);
                 const strokeMatch = sm[2].match(/(?:^|;)\s*stroke\s*:\s*([^;}\/]+)/);
+                const ruleMatch = sm[2].match(/fill-rule\s*:\s*([a-z-]+)/);
+                if (ruleMatch) fillRule = ruleMatch[1].trim();
                 if (swMatch) sw = parseFloat(swMatch[1]);
                 if (fillMatch) fill = fillMatch[1].trim();
                 if (strokeMatch) stroke = strokeMatch[1].trim();
@@ -246,6 +248,7 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                     if (fontSize !== null) cssStyles[sel].fontSize = fontSize;
                     if (fill !== null) cssStyles[sel].fill = fill;
                     if (stroke !== null) cssStyles[sel].stroke = stroke;
+                    if (fillRule !== null) cssStyles[sel].fillRule = fillRule;
                 }
             }
         }
@@ -280,6 +283,11 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
         const inlineFill = elementStr.match(/fill="([^"]+)"/);
         if (inlineFill) fill = inlineFill[1];
 
+        // SVG's initial fill-rule is nonzero; only an explicit evenodd changes it.
+        let fillRule = (cls && cls.fillRule) || 'nonzero';
+        const inlineRule = elementStr.match(/fill-rule="([a-z-]+)"/);
+        if (inlineRule) fillRule = inlineRule[1];
+
         // 3. Explicit stroke logic.
         // `strokeDisabled` tracks stroke="none" specifically, which is NOT the
         // same as "no stroke declared anywhere". Many skins put the stroke on a
@@ -307,7 +315,7 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
             doc.setDrawColor(0, 0, 0); // fallback stroke
         }
 
-        return { fill, hasStroke, strokeDisabled };
+        return { fill, hasStroke, strokeDisabled, fillRule };
     };
 
     // Converts fill/stroke info + shape-type into a jsPDF draw action.
@@ -452,7 +460,7 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                 }
             }
         } else if (tagName === 'path') {
-            const { fill, hasStroke, strokeDisabled } = applySvgStyle(fullTag);
+            const { fill, hasStroke, strokeDisabled, fillRule } = applySvgStyle(fullTag);
             // \b so this cannot match the d in id="..." when id precedes d.
             const dMatch = fullTag.match(/\bd="([^"]+)"/);
             if (dMatch) {
@@ -589,30 +597,66 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                     if (!isCurveCommand) { lastCp2X = null; lastCp2Y = null; }
                 }
 
-                // One draw call per subpath, so separate strokes stay separate.
+                const drawable = [];
                 for (const sub of subpaths) {
                     const pts = sub.points;
                     if (pts.length < 2) continue;
-
                     const start = pts[0];
                     const end = pts[pts.length - 1];
                     // Treat a subpath whose ends coincide as closed even without Z.
                     const looksClosed = sub.closed ||
                         (Math.abs(start.x - end.x) < 0.001 && Math.abs(start.y - end.y) < 0.001);
+                    drawable.push({ pts, start, end, closed: sub.closed, looksClosed });
+                }
 
-                    const mode = resolveDrawMode(fill, hasStroke, looksClosed, strokeDisabled);
-                    if (mode === 'skip') continue;
-                    const lStyle = mode === 'FD-stroke' ? 'FD' : mode === 'F-only' ? 'F' : 'S';
+                // A FILLED <path> with several subpaths is one shape, not several.
+                // Every diode's triangle is an outer and an inner contour wound in
+                // opposite directions, which the fill rule turns into a hollow ring
+                // (diode.asy draws that triangle with plain LINEs). Filling each
+                // subpath on its own floods the middle solid and buries anything
+                // underneath - which is how the coloured Boca Jrs diodes came out
+                // black. Strokes still get one call each, so separate pen strokes
+                // stay separate.
+                const anyClosed = drawable.some((s) => s.looksClosed);
+                const joinedMode = resolveDrawMode(fill, hasStroke, anyClosed, strokeDisabled);
+                const joined = drawable.length > 1 && typeof doc.moveTo === 'function' &&
+                    (joinedMode === 'F-only' || joinedMode === 'FD-stroke');
 
-                    const segments = [];
-                    for (let j = 1; j < pts.length; j++) {
-                        segments.push([pts[j].x - pts[j - 1].x, pts[j].y - pts[j - 1].y]);
+                if (joined) {
+                    for (const s of drawable) {
+                        doc.moveTo(s.start.x, s.start.y);
+                        for (let j = 1; j < s.pts.length; j++) doc.lineTo(s.pts[j].x, s.pts[j].y);
+                        doc.close();
                     }
-                    // Close the subpath for filled shapes
-                    if (sub.closed) {
-                        segments.push([start.x - end.x, start.y - end.y]);
+                    const eo = fillRule === 'evenodd';
+                    if (joinedMode === 'FD-stroke') {
+                        if (eo) doc.fillStrokeEvenOdd(); else doc.fillStroke();
+                    } else if (eo) {
+                        doc.fillEvenOdd();
+                    } else {
+                        doc.fill();
                     }
-                    doc.lines(segments, start.x, start.y, [1, 1], lStyle, sub.closed);
+                } else {
+                    // One draw call per subpath, so separate strokes stay separate.
+                    for (const sub of drawable) {
+                        const pts = sub.pts;
+                        const start = sub.start;
+                        const end = sub.end;
+
+                        const mode = resolveDrawMode(fill, hasStroke, sub.looksClosed, strokeDisabled);
+                        if (mode === 'skip') continue;
+                        const lStyle = mode === 'FD-stroke' ? 'FD' : mode === 'F-only' ? 'F' : 'S';
+
+                        const segments = [];
+                        for (let j = 1; j < pts.length; j++) {
+                            segments.push([pts[j].x - pts[j - 1].x, pts[j].y - pts[j - 1].y]);
+                        }
+                        // Close the subpath for filled shapes
+                        if (sub.closed) {
+                            segments.push([start.x - end.x, start.y - end.y]);
+                        }
+                        doc.lines(segments, start.x, start.y, [1, 1], lStyle, sub.closed);
+                    }
                 }
             }
         }
@@ -843,6 +887,42 @@ function drawPdfArc(doc, x1, y1, x2, y2, xs, ys, xe, ye, transformer = null) {
 
 
 // Main Library export
+
+// GND, flag and the junction dot are drawn AROUND the anchor rather than ending
+// on it, and carry no PIN of their own. (0,0) is where the wire arrives.
+const SKIN_ANCHOR_PIN = [[0, 0]];
+
+/**
+ * The skin SVG to draw for one placement.
+ *
+ * With the procedural TC2_Rough skin active, Default's artwork is redrawn
+ * freehand by rough_pen.js right here, seeded from the placement so two
+ * resistors on the same sheet are not identical copies, and cached so a repeat
+ * of the same placement costs nothing.
+ *
+ * `pins` come from the .asy, which analyzer.js parses for every symbol whatever
+ * the skin, so the freehand strokes still land exactly on the terminals the
+ * wires meet. Any failure falls back to the clean artwork rather than dropping
+ * the component.
+ */
+function skinSvgFor(assets, key, seed, pins) {
+    const svgText = assets.svgStrings.get(key);
+    if (!assets.rough || !svgText || typeof RoughPen === 'undefined') return svgText;
+
+    if (!assets.roughCache) assets.roughCache = new Map();
+    const cacheKey = key + '|' + seed;
+    if (assets.roughCache.has(cacheKey)) return assets.roughCache.get(cacheKey);
+
+    let out = svgText;
+    try {
+        out = RoughPen.roughen(svgText, { pins: pins || [], seed: seed }).svg;
+    } catch (e) {
+        console.warn(`[SKIN] could not redraw ${key} freehand:`, e && e.message);
+    }
+    assets.roughCache.set(cacheKey, out);
+    return out;
+}
+
 async function convertSceneToPdf(scene, assets, filename = 'Schematic', options = {}) {
     const optCanvasBasedOnRect = options.canvasBasedOnRectangle || false;
 
@@ -1028,7 +1108,8 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
                 const [xStr, yStr] = key.split(',');
                 const x = parseFloat(xStr);
                 const y = parseFloat(yStr);
-                drawSvgToPdf(doc, intersectionSvg, x, y, 'R0', minX, minY);
+                drawSvgToPdf(doc, skinSvgFor(assets, 'intersection', `${x},${y}`, SKIN_ANCHOR_PIN),
+                    x, y, 'R0', minX, minY);
             }
         }
     } else {
@@ -1072,7 +1153,9 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
 
         // Draw the body (via SVG String Native Parser or ASY geometry)
         if (assets.svgStrings && assets.svgStrings.has(key)) {
-            const svgText = assets.svgStrings.get(key);
+            const pins = (sym.asyData && sym.asyData.graphics && sym.asyData.graphics.pins)
+                ? sym.asyData.graphics.pins.map(p => [p.x, p.y]) : [];
+            const svgText = skinSvgFor(assets, key, `${key}|${sym.x}|${sym.y}`, pins);
             drawSvgToPdf(doc, svgText, sym.x, sym.y, sym.orientation, minX, minY);
         } else if (sym.asyData && sym.asyData.graphics) {
             // Natively draw fallback ASY components using jsPDF
@@ -1287,7 +1370,9 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
                 if (dir === 'bottom') flagOrientation = 'R180';
                 if (dir === 'left') flagOrientation = 'R270';
             }
-            drawSvgToPdf(doc, assets.svgStrings.get(typeKey), flag.x, flag.y, flagOrientation, minX, minY);
+            drawSvgToPdf(doc,
+                skinSvgFor(assets, typeKey, `${typeKey}|${flag.x}|${flag.y}`, SKIN_ANCHOR_PIN),
+                flag.x, flag.y, flagOrientation, minX, minY);
 
             if (!isGround) {
                 doc.setTextColor(0, 0, 0); // Black

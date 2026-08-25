@@ -173,3 +173,69 @@ test('a filled shape with stroke:none is still filled', () => {
     assert.strictEqual(calls.length, 1);
     assert.strictEqual(calls[0].style, 'F');
 });
+
+// ── Multi-subpath fills ──────────────────────────────────────────────────────
+// A <path> holding an outer and an inner contour is ONE shape. Every diode in
+// the skin set is drawn that way — diode.asy's triangle is plain LINEs, and the
+// SVG reproduces the hollow outline with two oppositely-wound contours. Filling
+// each subpath on its own floods the middle solid, which buried the blue and
+// yellow underneath the Boca Jrs diodes.
+
+// Records the compound-path API as well as doc.lines().
+function pathDoc() {
+    const ops = [];
+    const noop = () => {};
+    return {
+        ops,
+        setLineDashPattern: noop, setDrawColor: noop, setFillColor: noop,
+        setLineWidth: noop, setLineCap: noop, setLineJoin: noop,
+        line: noop, ellipse: noop,
+        lines: (segments, x, y, scale, style) => ops.push('lines:' + style),
+        moveTo: () => ops.push('moveTo'),
+        lineTo: () => ops.push('lineTo'),
+        close: () => ops.push('close'),
+        fill: () => ops.push('fill'),
+        fillEvenOdd: () => ops.push('fillEvenOdd'),
+        stroke: () => ops.push('stroke'),
+        fillStroke: () => ops.push('fillStroke'),
+        fillStrokeEvenOdd: () => ops.push('fillStrokeEvenOdd'),
+    };
+}
+
+function renderWith(doc, svg) {
+    drawSvgToPdf(doc, svg, 0, 0, 'R0', 0, 0);
+    return doc.ops;
+}
+
+test('a filled path with two contours fills once, as a ring', () => {
+    const doc = pathDoc();
+    const ops = renderWith(doc, wrap(
+        '<path fill="#103f79" d="M 0 0 L 30 0 L 15 26 Z M 5 4 L 25 4 L 15 21 Z"/>'
+    ));
+    assert.strictEqual(ops.filter(o => o === 'moveTo').length, 2, 'both contours in one path');
+    assert.strictEqual(ops.filter(o => o === 'fill').length, 1, 'a single fill for the whole shape');
+    assert.ok(!ops.some(o => o.startsWith('lines:F')),
+        'no per-subpath fill — that is what painted over the colours');
+});
+
+test('fill-rule: evenodd reaches the paint operator', () => {
+    const svg = '<svg viewBox="0 0 100 100"><defs><style>.ring{fill:#000;fill-rule:evenodd;}</style></defs>'
+        + '<path class="ring" d="M 0 0 L 30 0 L 15 26 Z M 5 4 L 25 4 L 15 21 Z"/></svg>';
+    assert.ok(renderWith(pathDoc(), svg).includes('fillEvenOdd'));
+});
+
+test('a stroked-and-filled ring still gets its outline', () => {
+    const ops = renderWith(pathDoc(), wrap(
+        '<path fill="#103f79" stroke="#000" d="M 0 0 L 30 0 L 15 26 Z M 5 4 L 25 4 L 15 21 Z"/>'
+    ));
+    assert.ok(ops.includes('fillStroke'), 'fill and stroke in one operation');
+});
+
+test('an unfilled path with two contours is still two separate strokes', () => {
+    // The regression above must not collapse independent pen strokes into one.
+    const ops = renderWith(pathDoc(), wrap(
+        '<path fill="none" stroke="#000" d="M 0 0 L 10 0 Z M 50 0 L 60 0 Z"/>'
+    ));
+    assert.strictEqual(ops.filter(o => o === 'lines:S').length, 2);
+    assert.ok(!ops.includes('moveTo'));
+});
