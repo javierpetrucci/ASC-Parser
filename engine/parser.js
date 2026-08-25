@@ -4,6 +4,20 @@ function normalizeAttrValue(raw) {
     return raw === '""' ? '' : raw;
 }
 
+// Reduces a SYMBOL type token ("TCLib\\\\Special\\\\arrow") to its component name
+// ("arrow"). Every consumer needs this, and computing it inline in four places
+// let two of them diverge on case.
+function symbolBasename(type) {
+    return String(type).split('\\').pop().split('/').pop();
+}
+
+// Case-insensitive lookup key. Component names are canonically cased on disk,
+// but LTSpice runs on a case-insensitive filesystem, so a .asc may legitimately
+// say "RES". Keying maps by this makes every lookup agree.
+function symbolKey(type) {
+    return symbolBasename(type).toLowerCase();
+}
+
 function parseAsc(text) {
     const lines = text.split(/\r\n|\r|\n/);
     const scene = {

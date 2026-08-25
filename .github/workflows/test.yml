@@ -1,0 +1,32 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # node:test and the assertion library are built in, so the suite has
+          # no dependencies and there is nothing to install or cache.
+          node-version: '22'
+
+      - name: Run test suite
+        run: npm test
+
+      - name: Specification tables match the engine
+        run: npm run spec:check
+
+      - name: Check every script parses
+        run: |
+          for f in app.js engine/*.js test/*.js test/helpers/*.js desktop/*.js; do
+            node --check "$f"
+          done

@@ -13,3 +13,7 @@ dist/LTSpice_to_PDF/neutralinojs.log
 # Local development
 .DS_Store
 Thumbs.db
+
+# Neutralino runtime state (local tokens, window geometry)
+.tmp/
+dist/LTSpice_to_PDF/.tmp/

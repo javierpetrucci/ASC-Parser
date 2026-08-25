@@ -100,7 +100,7 @@ function resolveAttrValue(sym, attrName) {
 function getWindowText(sym, index) {
     if (index === 0) return resolveAttrValue(sym, 'InstName');
     if (index === 3) {
-        const basename = sym.type.split('\\').pop().split('/').pop().toLowerCase();
+        const basename = symbolKey(sym.type);
         let val = TRANSISTOR_BASENAMES.has(basename)
             ? (sym.attrs['Value'] || '')
             : resolveAttrValue(sym, 'Value');
@@ -230,7 +230,9 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
             const sm = rule.match(/([^{]+)\{([^}]+)\}/);
             if (sm) {
                 const selectors = sm[1].split(',').map(s => s.trim().replace('.', ''));
-                let sw = null, fill = null, stroke = null;
+                let sw = null, fill = null, stroke = null, fontSize = null;
+                const fsMatch = sm[2].match(/font-size\s*:\s*([\d.]+)px/);
+                if (fsMatch) fontSize = parseFloat(fsMatch[1]);
                 const swMatch = sm[2].match(/stroke-width\s*:\s*([\d.]+)px/);
                 const fillMatch = sm[2].match(/(?:^|;)\s*fill\s*:\s*([^;}\/]+)/);
                 const strokeMatch = sm[2].match(/(?:^|;)\s*stroke\s*:\s*([^;}\/]+)/);
@@ -241,6 +243,7 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                 for (const sel of selectors) {
                     if (!cssStyles[sel]) cssStyles[sel] = {};
                     if (sw !== null) cssStyles[sel].strokeWidth = sw;
+                    if (fontSize !== null) cssStyles[sel].fontSize = fontSize;
                     if (fill !== null) cssStyles[sel].fill = fill;
                     if (stroke !== null) cssStyles[sel].stroke = stroke;
                 }
@@ -277,15 +280,24 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
         const inlineFill = elementStr.match(/fill="([^"]+)"/);
         if (inlineFill) fill = inlineFill[1];
 
-        // 3. Explicit stroke logic
+        // 3. Explicit stroke logic.
+        // `strokeDisabled` tracks stroke="none" specifically, which is NOT the
+        // same as "no stroke declared anywhere". Many skins put the stroke on a
+        // parent <g class="..."> that this flat scan does not see, and those
+        // elements rely on the stroke fallback below. Only an explicit `none`
+        // means "draw nothing".
         let hasStroke = false;
+        let strokeDisabled = false;
         let strokeColor = '#000000';
-        if (cls && cls.stroke !== undefined && cls.stroke !== 'none') {
-            hasStroke = true; strokeColor = cls.stroke;
+        if (cls && cls.stroke !== undefined) {
+            if (cls.stroke === 'none') strokeDisabled = true;
+            else { hasStroke = true; strokeColor = cls.stroke; }
         }
         const inlineStroke = elementStr.match(/stroke="([^"]+)"/);
-        if (inlineStroke && inlineStroke[1] !== 'none') {
-            hasStroke = true; strokeColor = inlineStroke[1];
+        if (inlineStroke) {
+            // An inline attribute overrides the class in both directions.
+            if (inlineStroke[1] === 'none') { strokeDisabled = true; hasStroke = false; }
+            else { strokeDisabled = false; hasStroke = true; strokeColor = inlineStroke[1]; }
         }
 
         if (hasStroke) {
@@ -295,15 +307,23 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
             doc.setDrawColor(0, 0, 0); // fallback stroke
         }
 
-        return { fill, hasStroke };
+        return { fill, hasStroke, strokeDisabled };
     };
 
-    // Converts fill/stroke info + shape-type into a jsPDF draw action
-    const resolveDrawMode = (fill, hasStroke, isClosedByDefault) => {
+    // Converts fill/stroke info + shape-type into a jsPDF draw action.
+    // Returns 'skip' for an element that is deliberately invisible.
+    const resolveDrawMode = (fill, hasStroke, isClosedByDefault, strokeDisabled = false) => {
         let effectiveFill = fill;
         if (effectiveFill === undefined && isClosedByDefault) effectiveFill = '#000';
 
         const wantFill = effectiveFill !== undefined && effectiveFill !== 'none';
+
+        // fill="none" together with stroke="none" paints nothing. This used to
+        // fall through to 'S' and stroke the geometry in black — which is how a
+        // disabled rough.js hachure layer ended up rendered as diagonal shading
+        // across TC2_Rough symbols.
+        if (!wantFill && strokeDisabled) return 'skip';
+
         if (wantFill) {
             const rgb = hexToRgb(effectiveFill);
             doc.setFillColor(rgb[0], rgb[1], rgb[2]);
@@ -372,8 +392,9 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
         };
 
         if (tagName === 'rect') {
-            const { fill, hasStroke } = applySvgStyle(fullTag);
-            const mode = resolveDrawMode(fill, hasStroke, true);
+            const { fill, hasStroke, strokeDisabled } = applySvgStyle(fullTag);
+            const mode = resolveDrawMode(fill, hasStroke, true, strokeDisabled);
+            if (mode === 'skip') continue;
             const lStyle = mode === 'FD-stroke' ? 'FD' : mode === 'F-only' ? 'F' : 'S';
             const rx = parseFloat((fullTag.match(/x="(-?[\d.]+)"/) || [])[1] ?? 0);
             const ry = parseFloat((fullTag.match(/y="(-?[\d.]+)"/) || [])[1] ?? 0);
@@ -385,7 +406,9 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
             const p4 = localTransformPoint(rx, ry + rh);
             doc.lines([[p2.x - p1.x, p2.y - p1.y], [p3.x - p2.x, p3.y - p2.y], [p4.x - p3.x, p4.y - p3.y], [p1.x - p4.x, p1.y - p4.y]], p1.x, p1.y, [1, 1], lStyle);
         } else if (tagName === 'line') {
-            applySvgStyle(fullTag);
+            const { strokeDisabled } = applySvgStyle(fullTag);
+            // A line has no interior, so stroke="none" makes it invisible.
+            if (strokeDisabled) continue;
             const x1 = parseFloat((fullTag.match(/x1="(-?[\d.]+)"/) || [])[1] ?? 0);
             const y1 = parseFloat((fullTag.match(/y1="(-?[\d.]+)"/) || [])[1] ?? 0);
             const x2 = parseFloat((fullTag.match(/x2="(-?[\d.]+)"/) || [])[1] ?? 0);
@@ -394,8 +417,9 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
             const p2 = localTransformPoint(x2, y2);
             doc.line(p1.x, p1.y, p2.x, p2.y);
         } else if (tagName === 'circle') {
-            const { fill, hasStroke } = applySvgStyle(fullTag);
-            const mode = resolveDrawMode(fill, hasStroke, true);
+            const { fill, hasStroke, strokeDisabled } = applySvgStyle(fullTag);
+            const mode = resolveDrawMode(fill, hasStroke, true, strokeDisabled);
+            if (mode === 'skip') continue;
             const ellipseStyle = mode === 'FD-stroke' ? 'FD' : mode === 'F-only' ? 'F' : 'S';
             const cx = parseFloat((fullTag.match(/cx="(-?[\d.]+)"/) || [])[1] ?? 0);
             const cy = parseFloat((fullTag.match(/cy="(-?[\d.]+)"/) || [])[1] ?? 0);
@@ -403,9 +427,10 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
             const cCenter = localTransformPoint(cx, cy);
             doc.ellipse(cCenter.x, cCenter.y, r, r, ellipseStyle);
         } else if (tagName === 'polygon' || tagName === 'polyline') {
-            const { fill, hasStroke } = applySvgStyle(fullTag);
+            const { fill, hasStroke, strokeDisabled } = applySvgStyle(fullTag);
             const isClosed = tagName === 'polygon';
-            const mode = resolveDrawMode(fill, hasStroke, isClosed);
+            const mode = resolveDrawMode(fill, hasStroke, isClosed, strokeDisabled);
+            if (mode === 'skip') continue;
             const lStyle = mode === 'FD-stroke' ? 'FD' : mode === 'F-only' ? 'F' : 'S';
             const ptsMatch = fullTag.match(/points="([^"]+)"/);
             if (ptsMatch) {
@@ -427,8 +452,9 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                 }
             }
         } else if (tagName === 'path') {
-            const { fill, hasStroke } = applySvgStyle(fullTag);
-            const dMatch = fullTag.match(/d="([^"]+)"/);
+            const { fill, hasStroke, strokeDisabled } = applySvgStyle(fullTag);
+            // \b so this cannot match the d in id="..." when id precedes d.
+            const dMatch = fullTag.match(/\bd="([^"]+)"/);
             if (dMatch) {
                 const tokens = [];
                 const regex = /([A-Za-z])|(-?(?:\d*\.\d+|\d+)(?:[eE][-+]?\d+)?)/g;
@@ -437,18 +463,27 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                     tokens.push(tMatch[0]);
                 }
 
-                // Accumulate all points for this path (absolute PDF coords)
+                // Accumulate points per SUBPATH (absolute PDF coords). A single
+                // <path> may contain several subpaths, each introduced by M/m.
+                // They must stay separate: collecting them into one flat list
+                // made jsPDF draw a connecting line from the end of one subpath
+                // to the start of the next, and let a single Z close across them.
                 let curX = 0, curY = 0;
                 let startX = 0, startY = 0;
                 let pathStarted = false;
                 let lastCp2X = null, lastCp2Y = null;
-                let pathHasZ = false;
-                const pathPoints = []; // absolute {x, y} PDF points
+                const subpaths = [];      // [{ points: [{x,y}], closed: bool }]
+                let current = null;       // subpath currently being built
                 let i = 0;
 
+                const beginSubpath = () => {
+                    current = { points: [], closed: false };
+                    subpaths.push(current);
+                };
+
                 const addPoint = (svgX, svgY) => {
-                    const p = localTransformPoint(svgX, svgY);
-                    pathPoints.push(p);
+                    if (!current) beginSubpath();
+                    current.points.push(localTransformPoint(svgX, svgY));
                 };
 
                 while (i < tokens.length) {
@@ -463,6 +498,7 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                         curX = absX; curY = absY;
                         startX = curX; startY = curY;
                         pathStarted = true;
+                        beginSubpath();
                         addPoint(curX, curY);
                         while (i + 1 < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
                             const extraX = parseFloat(tokens[i++]);
@@ -541,31 +577,109 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
                             lastCp2X = cp2x; lastCp2Y = cp2y;
                         }
                     } else if (cmd === 'Z' || cmd === 'z') {
-                        pathHasZ = true;
+                        // Closes the CURRENT subpath only, not the whole element.
+                        if (current) current.closed = true;
                         curX = startX; curY = startY;
+                    } else if (!/^[0-9.+-]/.test(cmd)) {
+                        // A (arcs) and Q/T (quadratics) have no branch here, so their
+                        // numeric arguments are never consumed and the segment is
+                        // dropped. Say so instead of failing silently.
+                        console.warn(`[SVG] Unsupported path command "${cmd}" - segment skipped.`);
                     }
                     if (!isCurveCommand) { lastCp2X = null; lastCp2Y = null; }
                 }
 
-                if (pathStarted && pathPoints.length > 1) {
-                    const start = pathPoints[0];
-                    const end = pathPoints[pathPoints.length - 1];
-                    const isEmotionallyClosed = pathHasZ || (Math.abs(start.x - end.x) < 0.001 && Math.abs(start.y - end.y) < 0.001);
-                    
-                    const mode = resolveDrawMode(fill, hasStroke, isEmotionallyClosed);
+                // One draw call per subpath, so separate strokes stay separate.
+                for (const sub of subpaths) {
+                    const pts = sub.points;
+                    if (pts.length < 2) continue;
+
+                    const start = pts[0];
+                    const end = pts[pts.length - 1];
+                    // Treat a subpath whose ends coincide as closed even without Z.
+                    const looksClosed = sub.closed ||
+                        (Math.abs(start.x - end.x) < 0.001 && Math.abs(start.y - end.y) < 0.001);
+
+                    const mode = resolveDrawMode(fill, hasStroke, looksClosed, strokeDisabled);
+                    if (mode === 'skip') continue;
                     const lStyle = mode === 'FD-stroke' ? 'FD' : mode === 'F-only' ? 'F' : 'S';
+
                     const segments = [];
-                    for (let j = 1; j < pathPoints.length; j++) {
-                        segments.push([pathPoints[j].x - pathPoints[j - 1].x, pathPoints[j].y - pathPoints[j - 1].y]);
+                    for (let j = 1; j < pts.length; j++) {
+                        segments.push([pts[j].x - pts[j - 1].x, pts[j].y - pts[j - 1].y]);
                     }
-                    // Close the path for filled shapes
-                    if (pathHasZ) {
-                        segments.push([start.x - pathPoints[pathPoints.length - 1].x, start.y - pathPoints[pathPoints.length - 1].y]);
+                    // Close the subpath for filled shapes
+                    if (sub.closed) {
+                        segments.push([start.x - end.x, start.y - end.y]);
                     }
-                    doc.lines(segments, start.x, start.y, [1, 1], lStyle, pathHasZ);
+                    doc.lines(segments, start.x, start.y, [1, 1], lStyle, sub.closed);
                 }
             }
         }
+    }
+
+    // ── <text> pass ────────────────────────────────────────────────────────
+    // The element scan above only handles shapes, so SVG text used to vanish
+    // from the PDF entirely. Drawn after the shapes (painter's model: labels on
+    // top), which is also where a schematic wants them.
+    for (const m of svgText.matchAll(/<text\b([^>]*)>([\s\S]*?)<\/text>/g)) {
+        const attrs = m[1];
+        // Flatten any <tspan> wrappers and collapse whitespace.
+        const content = m[2]
+            .replace(/<[^>]*>/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+        if (!content) continue;
+
+        const attr = (name) => {
+            const hit = attrs.match(new RegExp('\\b' + name + '="([^"]*)"'));
+            return hit ? hit[1] : null;
+        };
+
+        const tx = parseFloat(attr('x') ?? '0') || 0;
+        const ty = parseFloat(attr('y') ?? '0') || 0;
+
+        // font-size from the attribute, else from the element's CSS class.
+        let fontPx = parseFloat(attr('font-size') ?? '');
+        if (!Number.isFinite(fontPx)) {
+            const cls = attr('class');
+            fontPx = (cls && cssStyles[cls] && cssStyles[cls].fontSize) || 12;
+        }
+
+        // text-anchor maps onto the same keywords drawLTSpiceText understands.
+        const anchorAttr = (attr('text-anchor') || 'start').toLowerCase();
+        const align = anchorAttr === 'middle' ? 'Center'
+                    : anchorAttr === 'end' ? 'Right'
+                    : 'Left';
+
+        const fillAttr = attr('fill');
+        const rgb = fillAttr && fillAttr !== 'none' ? hexToRgb(fillAttr) : [0, 0, 0];
+        doc.setTextColor(rgb[0], rgb[1], rgb[2]);
+
+        const p = transformPoint(tx, ty);
+        // Rotate the glyphs with the symbol. jsPDF measures its `angle` option
+        // counter-clockwise, while angleRad is clockwise in screen coordinates.
+        const angleDeg = -angleRad * 180 / Math.PI;
+        drawSvgText(doc, content, p.x, p.y, align, fontPx, angleDeg);
+    }
+}
+
+// Places SVG text at its baseline anchor, honouring text-anchor and rotation.
+function drawSvgText(doc, text, x, y, align, ptSize, angleDeg) {
+    doc.setFontSize(ptSize);
+    const w = doc.getTextWidth(text);
+
+    let dx = 0;
+    if (align === 'Center') dx = -w / 2;
+    else if (align === 'Right') dx = -w;
+
+    if (angleDeg) {
+        const rad = -angleDeg * Math.PI / 180;
+        const rx = dx * Math.cos(rad);
+        const ry = dx * Math.sin(rad);
+        doc.text(text, x + rx, y + ry, { angle: angleDeg, align: 'left', baseline: 'alphabetic' });
+    } else {
+        doc.text(text, x + dx, y, { angle: 0, align: 'left', baseline: 'alphabetic' });
     }
 }
 
@@ -732,9 +846,9 @@ function drawPdfArc(doc, x1, y1, x2, y2, xs, ys, xe, ye, transformer = null) {
 async function convertSceneToPdf(scene, assets, filename = 'Schematic', options = {}) {
     const optCanvasBasedOnRect = options.canvasBasedOnRectangle || false;
 
-    // Analyze ASY elements if needed (supplying assets to skip fetched SVGs)
+    // Resolve each symbol's .asy (cached and deduplicated by type)
     if (typeof analyzeSceneSymbols === 'function') {
-        await analyzeSceneSymbols(scene, assets);
+        await analyzeSceneSymbols(scene);
     }
 
     // 1. Calculate Bounds
@@ -743,6 +857,42 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         if (isNaN(x) || isNaN(y)) return;
         minX = Math.min(minX, x); minY = Math.min(minY, y);
         maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+    };
+
+    // Approximate glyph box for a standalone TEXT, grown in the direction the
+    // alignment makes the text run. doc.getTextWidth() is unavailable here (the
+    // jsPDF document does not exist yet), so this uses the same pt sizes the
+    // renderer will apply with a ~0.6em average advance.
+    const BOUNDS_FONT_PT = { 0: 8, 1: 13, 2: 20, 3: 26, 4: 32, 5: 46, 6: 65, 7: 92 };
+    const expandText = (t) => {
+        if (isNaN(t.x) || isNaN(t.y)) return;
+        const pt = BOUNDS_FONT_PT[t.fontSize] || 8;
+        const w = String(t.content || '').length * pt * 0.6;
+        const align = t.alignment || 'Left';
+        const vertical = align.startsWith('V');
+        const base = vertical ? align.slice(1) : align;
+
+        expand(t.x, t.y);
+        if (vertical) {
+            // Vertical text reads bottom-to-top from the anchor.
+            const up = base === 'Right' ? 0 : w;
+            const down = base === 'Right' ? w : 0;
+            expand(t.x - pt, t.y - (base === 'Center' ? w / 2 : up));
+            expand(t.x + pt, t.y + (base === 'Center' ? w / 2 : down));
+        } else {
+            const right = base === 'Right' ? 0 : (base === 'Center' ? w / 2 : w);
+            const left = base === 'Left' ? 0 : (base === 'Center' ? w / 2 : w);
+            expand(t.x - left, t.y - pt);
+            expand(t.x + right, t.y + pt);
+        }
+    };
+
+    // A flag draws a GND/label glyph plus its text around the anchor.
+    const FLAG_EXTENT = 40;
+    const expandFlag = (f) => {
+        if (isNaN(f.x) || isNaN(f.y)) return;
+        expand(f.x - FLAG_EXTENT, f.y - FLAG_EXTENT);
+        expand(f.x + FLAG_EXTENT, f.y + FLAG_EXTENT);
     };
 
     let largestRectIndex = -1;
@@ -769,6 +919,12 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         for (const c of scene.circles) { expand(c.x1, c.y1); expand(c.x2, c.y2); }
         for (const a of scene.arcs) { expand(a.x1, a.y1); expand(a.x2, a.y2); }
 
+        // Standalone text and flags were excluded, so a SPICE directive or a net
+        // label placed outside the component area got clipped off the page — and
+        // a schematic made only of directives/labels fell through to `return null`.
+        for (const t of scene.texts) { expandText(t); }
+        for (const f of scene.flags) { expandFlag(f); }
+
         if (minX === Infinity) return null; // empty scene
         const MARGIN = 100;
         minX -= MARGIN; minY -= MARGIN; maxX += MARGIN; maxY += MARGIN;
@@ -778,6 +934,9 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
     const height = maxY - minY;
 
     // 2. Initialize jsPDF
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        throw new Error('jsPDF failed to load — check your connection or the local vendored copy.');
+    }
     const doc = new window.jspdf.jsPDF({
         orientation: width > height ? 'l' : 'p',
         unit: 'pt',
@@ -890,7 +1049,8 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
     doc.setLineDashPattern([], 0); // Reset dash style
     for (const sym of scene.symbols) {
         doc.setLineDashPattern([], 0); // Reset for each symbol to prevent state leakage
-        const basename = sym.type.split('\\').pop().split('/').pop();
+        const basename = symbolBasename(sym.type);
+        const key = symbolKey(sym.type);
 
         // Build the ASY-space → PDF-space transform for this symbol.
         // Used for both ASY-fallback body drawing AND pin label rendering.
@@ -911,8 +1071,8 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         };
 
         // Draw the body (via SVG String Native Parser or ASY geometry)
-        if (assets.svgStrings && assets.svgStrings.has(basename)) {
-            const svgText = assets.svgStrings.get(basename);
+        if (assets.svgStrings && assets.svgStrings.has(key)) {
+            const svgText = assets.svgStrings.get(key);
             drawSvgToPdf(doc, svgText, sym.x, sym.y, sym.orientation, minX, minY);
         } else if (sym.asyData && sym.asyData.graphics) {
             // Natively draw fallback ASY components using jsPDF
@@ -1020,7 +1180,7 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         // must also declare a WINDOW position for that index.
 
         const effectiveWindows = new Map();
-        const table = COMPONENT_DEFAULTS[basename];
+        const table = lookupComponentDefaults(basename);
         const useOverride = options.overrideAnchors && !!table;
 
         if (useOverride) {
@@ -1064,7 +1224,9 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         }
 
         // --- Step 3: Inductor special-case alignment override ---
-        if (sym.type === 'ind' && ['R0', 'R180', 'M0', 'M180'].includes(sym.orientation)) {
+        // Compare the basename, not the full type: a pathed reference such as
+        // Misc\ind (or a differently-cased one) used to skip this exception.
+        if (key === 'ind' && ['R0', 'R180', 'M0', 'M180'].includes(sym.orientation)) {
             if (effectiveWindows.has(0)) effectiveWindows.get(0).align = 'Right';
             if (effectiveWindows.has(3)) effectiveWindows.get(3).align = 'Right';
         }
@@ -1116,14 +1278,16 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         const type = isGround ? 'GND' : 'flag';
         const dir = findIncomingWireDirection(flag.x, flag.y, scene.wires);
 
-        if (assets.svgStrings && assets.svgStrings.has(type)) {
+        // svgStrings is keyed lower-case (see prepareAssets), so normalise here too.
+        const typeKey = type.toLowerCase();
+        if (assets.svgStrings && assets.svgStrings.has(typeKey)) {
             let flagOrientation = 'R0';
             if (isGround) {
                 if (dir === 'right') flagOrientation = 'R90';
                 if (dir === 'bottom') flagOrientation = 'R180';
                 if (dir === 'left') flagOrientation = 'R270';
             }
-            drawSvgToPdf(doc, assets.svgStrings.get(type), flag.x, flag.y, flagOrientation, minX, minY);
+            drawSvgToPdf(doc, assets.svgStrings.get(typeKey), flag.x, flag.y, flagOrientation, minX, minY);
 
             if (!isGround) {
                 doc.setTextColor(0, 0, 0); // Black
@@ -1193,8 +1357,6 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
     return doc.output('arraybuffer');
 }
 
-window.LTSpiceEngine = {
-    parse: typeof parseAsc !== 'undefined' ? parseAsc : null,
-    render: convertSceneToPdf,
-    defaults: typeof COMPONENT_DEFAULTS !== 'undefined' ? COMPONENT_DEFAULTS : {}
-};
+// NOTE: the public API is defined once, in engine/index.js (loaded after
+// this file). A second assignment used to live here and was silently
+// overwritten, taking its `defaults` key with it.

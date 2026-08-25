@@ -6,6 +6,7 @@ const browseBtn = document.getElementById('browse-btn');
 const downloadBtn = document.getElementById('download-btn');
 const pdfContainer = document.getElementById('pdf-container');
 const welcomeMsg = document.getElementById('welcome-msg');
+const statusMsg = document.getElementById('status-msg');
 const optCanvasRect = document.getElementById('opt-canvas-rect');
 const optDebugAnchors = document.getElementById('opt-debug-anchors');
 const optOverrideAnchors = document.getElementById('opt-override-anchors');
@@ -18,6 +19,10 @@ const closeSpecBtn = document.getElementById('close-spec-btn');
 
 let currentPdfBlob = null;
 let currentFilename = 'schematic';
+// Guards processFile/processBatch against overlapping runs. Without it, dropping
+// a second file (or toggling an option) mid-render made the in-flight render
+// pick up the newer filename, and let two batches write to the same folder.
+let isRendering = false;
 let currentFileObj = null;
 
 // Initialize Skins Dropdown
@@ -76,6 +81,17 @@ if (skinSelector) {
     });
 }
 
+// The "i" badges live inside the option <label>, so a click on them used to
+// toggle the very checkbox they document and trigger a full re-render. Swallow
+// the click here rather than via `pointer-events: none`, which would also kill
+// the :hover tooltip the badge exists for.
+document.querySelectorAll('.help-btn').forEach((badge) => {
+    badge.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    });
+});
+
 // ── 1. Global Drag and Drop ──────────────────────────────────────
 let dragCounter = 0;
 
@@ -89,7 +105,10 @@ document.addEventListener('dragover', (e) => e.preventDefault());
 
 document.addEventListener('dragleave', (e) => {
     e.preventDefault();
-    dragCounter--;
+    // Clamp at 0: Chrome does not reliably fire the final dragleave when a drag
+    // exits the window or is cancelled with Escape. Letting the counter go
+    // negative left the overlay stuck and blocked every later drag.
+    dragCounter = Math.max(0, dragCounter - 1);
     if (dragCounter === 0) dropOverlay.classList.remove('active');
 });
 
@@ -98,15 +117,25 @@ document.addEventListener('drop', (e) => {
     dragCounter = 0;
     dropOverlay.classList.remove('active');
 
-    if (e.dataTransfer.files.length > 0) {
-        processFile(e.dataTransfer.files[0]);
+    const dropped = e.dataTransfer.files;
+    if (dropped.length === 0) {
+        // Folders and non-file drags land here; previously nothing happened at all.
+        showStatus('Nothing to convert', 'Drop a .asc schematic file (not a folder).', true);
+        return;
     }
+    if (dropped.length > 1) {
+        showStatus('One file at a time', `Converting "${dropped[0].name}". Use Batch Process for multiple files.`);
+    }
+    processFile(dropped[0]);
 });
 
 // File input manually triggered from dropzone click
 if (fileInput) {
     fileInput.addEventListener('change', (e) => {
         if (e.target.files.length > 0) processFile(e.target.files[0]);
+        // Reset so picking the SAME path again still fires `change` — the usual
+        // flow is edit in LTSpice, then re-convert the same file.
+        e.target.value = '';
     });
 }
 
@@ -234,8 +263,7 @@ async function prepareAssets(scene) {
     neededTypes.add('intersection');
     
     for (const sym of scene.symbols) {
-        const basename = sym.type.split('\\').pop().split('/').pop();
-        neededTypes.add(basename);
+        neededTypes.add(symbolBasename(sym.type));
     }
     for (const flag of scene.flags) {
         neededTypes.add(flag.name === '0' ? 'GND' : 'flag');
@@ -247,10 +275,14 @@ async function prepareAssets(scene) {
     const promises = Array.from(neededTypes).map(async (type) => {
         if (selectedSkin === 'None') return; // Skip fetching, force ASY fallback
         try {
+            // Fetch with the on-disk casing, but key the map case-insensitively so
+            // the renderer's lookup cannot miss on a differently-cased .asc.
             const res = await fetch(`Assets/Skins/${selectedSkin}/${type}.svg${ASSET_VERSION}`);
             if (res.ok) {
                 const text = await res.text();
-                assets.svgStrings.set(type, text);
+                assets.svgStrings.set(type.toLowerCase(), text);
+            } else {
+                console.warn(`[SKIN] ${selectedSkin} has no ${type}.svg (falling back to .asy geometry)`);
             }
         } catch (e) {
             console.warn(`Could not load SVG for ${type}`);
@@ -296,130 +328,270 @@ function consolePrint(text, style = 'muted') {
 
 
 /** Small async delay helper */
-const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
 let consoleSequenceId = 0;
 
-async function animateConsoleSequence(sequenceId, fileName, fileSize, encoding, wCount, symCount, txtCount, svgCacheSize, currentFilename) {
-    const lines = [
-        { text: `$ open  "${fileName}"`, style: 'dim', delay: 45 },
-        { text: `  reading file  [${(fileSize / 1024).toFixed(1)} kB]`, style: 'muted', delay: 35 },
-        { text: `  encoding       ${encoding}`, style: 'muted', delay: 35 },
-        { text: `  parsing ASC tokens...`, style: 'normal', delay: 45 },
-        { text: `  wires:${wCount}  symbols:${symCount}  labels:${txtCount}`, style: 'dim', delay: 35 },
-        { text: `  loading component SVGs...`, style: 'normal', delay: 45 },
-        { text: `  font + ${svgCacheSize} symbol(s) cached`, style: 'dim', delay: 35 },
-        { text: `  rendering PDF vectors...`, style: 'normal', delay: 45 },
-        { text: `  building blob URL...`, style: 'muted', delay: 30 },
-        { text: `[ OK ] done — ${currentFilename}.pdf`, style: 'ok', delay: 0 }
-    ];
+// Reports pipeline stages as they happen. The previous version was a scripted
+// animation fired AFTER the render finished and never awaited, so the "parsing…
+// / loading SVGs… / rendering…" lines were pure theatre printed retroactively —
+// and during a slow render the console showed nothing at all.
+function consoleStage(sequenceId, text, style = 'normal') {
+    if (sequenceId !== consoleSequenceId) return false; // superseded by a newer file
+    consolePrint(text, style);
+    return true;
+}
 
-    for (const line of lines) {
-        if (sequenceId !== consoleSequenceId) return; // Terminate if another file starts processing
-        consolePrint(line.text, line.style);
-        if (line.delay > 0) {
-            await wait(line.delay);
-        }
+// Yields to the event loop so the line just printed actually paints before the
+// next (potentially blocking) stage starts.
+//
+// requestAnimationFrame alone is NOT safe here: browsers stop firing it in a
+// hidden or backgrounded tab, which would leave the conversion suspended
+// forever if the user switches away mid-render. Race it against a timer so the
+// pipeline always continues, and still gets a real paint when visible.
+function paintTick() {
+    return new Promise(resolve => {
+        let settled = false;
+        const finish = () => {
+            if (settled) return;
+            settled = true;
+            resolve();
+        };
+        requestAnimationFrame(() => setTimeout(finish, 0));
+        setTimeout(finish, 50);
+    });
+}
+
+
+// Decodes raw .asc/.asy bytes to text, honouring the byte-order mark.
+// LTspice 24.x writes UTF-8 (often with a BOM); older versions wrote
+// windows-1252, which stays the no-BOM default. Without the UTF-8 BOM branch
+// the first line decodes as "ï»¿Version 4" and the parser drops the header.
+function decodeAscBytes(bytes, buffer) {
+    let encoding = 'windows-1252';
+    let offset = 0;
+
+    if (bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
+        encoding = 'utf-8';
+        offset = 3;
+    } else if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
+        encoding = 'utf-16le';
+        offset = 2;
+    } else if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) {
+        encoding = 'utf-16be';
+        offset = 2;
+    } else if (isLikelyUtf8(bytes)) {
+        // No BOM, but the byte pattern is valid multi-byte UTF-8 — decoding as
+        // windows-1252 would turn accented net labels into mojibake.
+        encoding = 'utf-8';
     }
+
+    const source = offset ? bytes.subarray(offset) : (buffer || bytes);
+    return { text: new TextDecoder(encoding).decode(source), encoding };
+}
+
+// True only when the buffer contains at least one well-formed multi-byte UTF-8
+// sequence and no invalid ones. Pure ASCII returns false — it decodes
+// identically either way, so the windows-1252 default is kept.
+function isLikelyUtf8(bytes) {
+    let sawMultiByte = false;
+    for (let i = 0; i < bytes.length; i++) {
+        const b = bytes[i];
+        if (b < 0x80) continue;
+        let extra;
+        if (b >= 0xC2 && b <= 0xDF) extra = 1;
+        else if (b >= 0xE0 && b <= 0xEF) extra = 2;
+        else if (b >= 0xF0 && b <= 0xF4) extra = 3;
+        else return false;
+        if (i + extra >= bytes.length) return false;
+        for (let k = 1; k <= extra; k++) {
+            if ((bytes[i + k] & 0xC0) !== 0x80) return false;
+        }
+        sawMultiByte = true;
+        i += extra;
+    }
+    return sawMultiByte;
+}
+
+// Status and error messages get their own panel. They used to be written into
+// #welcome-msg, which (a) is styled to hide h3/p — so every error and all batch
+// progress was invisible — and (b) contains #view-spec-btn, which the overwrite
+// destroyed along with its listener.
+function showStatus(title, body, isError = false) {
+    if (!statusMsg) return;
+    const cls = isError ? ' class="status-err"' : '';
+    statusMsg.innerHTML = `<h3${cls}>${escapeHtml(title)}</h3><p>${escapeHtml(body)}</p>`;
+    statusMsg.style.display = 'block';
+    welcomeMsg.style.display = 'none';
+}
+
+// Same as showStatus but appends a bulleted list (used for per-file batch failures).
+function showStatusWithList(title, body, items, isError = false) {
+    if (!statusMsg) return;
+    const cls = isError ? ' class="status-err"' : '';
+    const li = items.map(t => `<li>${escapeHtml(t)}</li>`).join('');
+    statusMsg.innerHTML =
+        `<h3${cls}>${escapeHtml(title)}</h3><p>${escapeHtml(body)}</p>` +
+        (li ? `<ul>${li}</ul>` : '');
+    statusMsg.style.display = 'block';
+    welcomeMsg.style.display = 'none';
+}
+
+function hideStatus() {
+    if (statusMsg) statusMsg.style.display = 'none';
+}
+
+// Single source of truth for the render options, so processFile and
+// processBatch cannot drift and a batch reads them exactly once.
+function readRenderOptions() {
+    return {
+        canvasBasedOnRectangle: optCanvasRect ? optCanvasRect.checked : false,
+        showTextAnchors: optDebugAnchors ? optDebugAnchors.checked : false,
+        overrideAnchors: optOverrideAnchors ? optOverrideAnchors.checked : true
+    };
+}
+
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 async function processFile(file) {
     if (!file.name.toLowerCase().endsWith('.asc')) {
-        alert('Please drop a valid .asc file.');
+        showStatus('Unsupported file', `"${file.name}" is not a .asc schematic.`, true);
         return;
     }
+    if (isRendering) return;
+    isRendering = true;
 
-    currentFilename = file.name.replace(/\.[^/.]+$/, "");
+    // Captured locally: these are read again after several awaits, and reading
+    // the module-level global there let a newer drop rename an in-flight render.
+    const filename = file.name.replace(/\.[^/.]+$/, "");
+    currentFilename = filename;
     currentFileObj = file;
 
-    // Show loading state (hide PDF, welcome, and specification container)
+    // Show loading state (hide PDF, welcome, status and specification container)
     if (specContainer) specContainer.style.display = 'none';
     welcomeMsg.style.display = 'none';
     pdfContainer.style.display = 'none';
+    hideStatus();
 
     // Increment console sequence counter to cancel any active background console animations
     consoleSequenceId++;
     const mySequenceId = consoleSequenceId;
 
     try {
+        // Each stage prints BEFORE the work it names, then yields a frame so the
+        // line paints. That way a slow render shows where it actually is.
         // ── 1. Read file ──────────────────────────────────────
+        consoleStage(mySequenceId, `$ open  "${file.name}"`, 'dim');
         const buffer = await file.arrayBuffer();
         const bytes = new Uint8Array(buffer);
+        consoleStage(mySequenceId, `  reading file  [${(file.size / 1024).toFixed(1)} kB]`, 'muted');
 
         // ── 2. Detect encoding ────────────────────────────────
-        let encoding = 'windows-1252';
-        if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
-            encoding = 'utf-16le';
-        }
-
-        const decoder = new TextDecoder(encoding);
-        const text = decoder.decode(buffer);
+        const { text, encoding } = decodeAscBytes(bytes, buffer);
+        consoleStage(mySequenceId, `  encoding       ${encoding}`, 'muted');
 
         // ── 3. Parse ASC ──────────────────────────────────────
+        consoleStage(mySequenceId, '  parsing ASC tokens...');
+        await paintTick();
         const scene = window.LTSpiceEngine.parse(text);
+        if (mySequenceId !== consoleSequenceId) return;
 
-        const wCount  = scene.wires.length;
-        const symCount = scene.symbols.length;
-        const txtCount = scene.texts.length;
+        consoleStage(mySequenceId,
+            `  wires:${scene.wires.length}  symbols:${scene.symbols.length}  labels:${scene.texts.length}`,
+            'dim');
 
         // ── 4. Load assets ────────────────────────────────────
+        consoleStage(mySequenceId, '  loading component SVGs...');
+        await paintTick();
         const assets = await prepareAssets(scene);
+        if (mySequenceId !== consoleSequenceId) return;
+        consoleStage(mySequenceId, `  font + ${assets.svgStrings.size} symbol(s) cached`, 'dim');
 
         // ── 5. Render to PDF ──────────────────────────────────
-        const options = {
-            canvasBasedOnRectangle: optCanvasRect ? optCanvasRect.checked : false,
-            showTextAnchors: optDebugAnchors ? optDebugAnchors.checked : false,
-            overrideAnchors: optOverrideAnchors ? optOverrideAnchors.checked : true
-        };
-        const pdfBytes = await window.LTSpiceEngine.render(scene, assets, currentFilename, options);
+        consoleStage(mySequenceId, '  rendering PDF vectors...');
+        await paintTick();
+        const options = readRenderOptions();
+        const pdfBytes = await window.LTSpiceEngine.render(scene, assets, filename, options);
+        if (mySequenceId !== consoleSequenceId) return;
+
+        // render() returns null when the scene has nothing drawable. Passing that
+        // to new File() produced a 4-byte PDF containing the text "null", served
+        // as application/pdf with the download button enabled.
+        if (!pdfBytes) {
+            throw new Error('Nothing to render — this schematic has no drawable geometry.');
+        }
 
         // ── 6. Update viewer ──────────────────────────────────
-        currentPdfBlob = new File([pdfBytes], `${currentFilename}.pdf`, { type: 'application/pdf' });
-        const blobUrl = URL.createObjectURL(currentPdfBlob);
-        pdfContainer.innerHTML = `<iframe id="pdf-viewer" src="${blobUrl}#view=FitH" style="width:100%;height:100%;border:none;"></iframe>`;
+        consoleStage(mySequenceId, '  building blob URL...', 'muted');
+        currentPdfBlob = new File([pdfBytes], `${filename}.pdf`, { type: 'application/pdf' });
+        setPdfViewer(URL.createObjectURL(currentPdfBlob));
 
-        pdfContainer.style.display = 'block';
-        downloadBtn.disabled = false;
-
-        // ── 7. Run animated log sequence concurrently ────────
-        animateConsoleSequence(
-            mySequenceId,
-            file.name,
-            file.size,
-            encoding,
-            wCount,
-            symCount,
-            txtCount,
-            assets.svgStrings.size,
-            currentFilename
-        );
+        consoleStage(mySequenceId, `[ OK ] done — ${filename}.pdf`, 'ok');
 
     } catch (err) {
         console.error(err);
         consolePrint(`[ERR] ${err.message}`, 'err');
-        welcomeMsg.innerHTML = `<h3 style="color:var(--accent)">Error</h3><p>${err.message}</p>`;
-        welcomeMsg.style.display = 'block';
+        showStatus('Error', err.message, true);
+        // Drop the stale PDF. Leaving it wired up let the user download the
+        // PREVIOUS successful render after a failed re-render, silently getting
+        // a file that did not match the current options.
+        clearPdfViewer();
+        currentPdfBlob = null;
+        downloadBtn.disabled = true;
+    } finally {
+        isRendering = false;
     }
+}
+
+// Swaps the viewer iframe, revoking the previous object URL. Every re-render
+// used to leak one blob URL, pinning the whole PDF buffer for the page lifetime.
+let currentBlobUrl = null;
+
+function setPdfViewer(blobUrl) {
+    if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+    currentBlobUrl = blobUrl;
+    pdfContainer.innerHTML = `<iframe id="pdf-viewer" src="${blobUrl}#view=FitH" style="width:100%;height:100%;border:none;"></iframe>`;
+    pdfContainer.style.display = 'block';
+    downloadBtn.disabled = false;
+}
+
+function clearPdfViewer() {
+    if (currentBlobUrl) {
+        URL.revokeObjectURL(currentBlobUrl);
+        currentBlobUrl = null;
+    }
+    pdfContainer.innerHTML = '';
+    pdfContainer.style.display = 'none';
 }
 
 
 // Recursively search for .asc files using the Neutralino native API
-async function scanFolderForAsc(dir, fileList = []) {
+// Returns { ok, files }. `ok` is false only when the ROOT folder could not be
+// read, so the caller can tell "folder is gone / no permission" apart from
+// "folder has no .asc files" — previously both looked identical.
+async function scanFolderForAsc(dir, fileList = [], isRoot = true) {
     let entries;
-    try { entries = await window.Neutralino.filesystem.readDirectory(dir); } 
-    catch (e) { return fileList; }
+    try { entries = await window.Neutralino.filesystem.readDirectory(dir); }
+    catch (e) {
+        if (isRoot) return { ok: false, files: fileList };
+        console.warn(`Skipping unreadable directory: ${dir}`);
+        return { ok: true, files: fileList };
+    }
     
     for (const entry of entries) {
         if (entry.entry === '.' || entry.entry === '..') continue;
         const fullPath = dir + (dir.endsWith('/') || dir.endsWith('\\') ? '' : '/') + entry.entry;
         
         if (entry.type === 'DIRECTORY') {
-            await scanFolderForAsc(fullPath, fileList);
+            await scanFolderForAsc(fullPath, fileList, false);
         } else if (entry.type === 'FILE' && entry.entry.toLowerCase().endsWith('.asc')) {
             fileList.push(fullPath);
         }
     }
-    return fileList;
+    return { ok: true, files: fileList };
 }
 
 // Ensure remote folders exist recursively
@@ -442,23 +614,40 @@ async function ensureDestDir(destPath) {
 }
 
 async function processBatch(sourceFolder, destFolder) {
-    welcomeMsg.innerHTML = `<h3>Batch Processing...</h3><p>Scanning folder...</p>`;
-    welcomeMsg.style.display = 'block';
+    if (isRendering) return;
+    isRendering = true;
+    if (runBatchBtn) runBatchBtn.disabled = true;
+
+    showStatus('Batch Processing...', 'Scanning folder...');
     pdfContainer.style.display = 'none';
-    
+
     try {
-        const files = await scanFolderForAsc(sourceFolder);
+        // Read the render options ONCE. Reading them inside the loop meant
+        // toggling a checkbox mid-batch produced a folder of PDFs with mixed
+        // settings.
+        const options = readRenderOptions();
+
+        const scan = await scanFolderForAsc(sourceFolder);
+        if (!scan.ok) {
+            // An unreadable folder (moved, deleted, no permission) used to be
+            // reported as "no .asc files found", which is actively misleading.
+            showStatus('Error', `Could not read the origin folder: ${sourceFolder}`, true);
+            return;
+        }
+        const files = scan.files;
         if (files.length === 0) {
-            welcomeMsg.innerHTML = `<h3>Done</h3><p>No .asc files found in that directory.</p>`;
+            showStatus('Done', 'No .asc files found in that directory.');
             return;
         }
 
         let successCount = 0;
+        const failures = [];
+
         for (let i = 0; i < files.length; i++) {
             const filePath = files[i];
             const filename = filePath.split(/[\\/]/).pop().replace(/\.[^/.]+$/, "");
-            
-            welcomeMsg.innerHTML = `<h3>Processing ${i+1}/${files.length}</h3><p>${filename}.asc</p>`;
+
+            showStatus(`Processing ${i + 1}/${files.length}`, `${filename}.asc`);
             await new Promise(r => setTimeout(r, 10));
 
             try {
@@ -468,62 +657,88 @@ async function processBatch(sourceFolder, destFolder) {
                     relativePath = filePath.substring(sourceFolder.length);
                 }
                 const relativePdfPath = relativePath.replace(/\.asc$/i, '.pdf');
-                
-                const finalPdfPath = (destFolder + '/' + relativePdfPath).replace(/\\/g, '/').replace(/\/\//g, '/');
-                
+                const finalPdfPath = joinDestPath(destFolder, relativePdfPath);
+
                 // Read via Neutralino native API
                 const rawBuffer = await window.Neutralino.filesystem.readBinaryFile(filePath);
                 // Neutralino returns an ArrayBuffer for binary files.
                 const bytes = new Uint8Array(rawBuffer);
-                
-                let encoding = 'windows-1252'; 
-                if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
-                    encoding = 'utf-16le';
-                }
-                
-                const decoder = new TextDecoder(encoding);
-                const text = decoder.decode(bytes);
-                
+                const { text } = decodeAscBytes(bytes, rawBuffer);
+
                 const scene = window.LTSpiceEngine.parse(text);
                 const assets = await prepareAssets(scene);
-                
-                const options = {
-                    canvasBasedOnRectangle: optCanvasRect ? optCanvasRect.checked : false,
-                    showTextAnchors: optDebugAnchors ? optDebugAnchors.checked : false,
-                    overrideAnchors: optOverrideAnchors ? optOverrideAnchors.checked : true
-                };
-                
+
                 const pdfBytes = await window.LTSpiceEngine.render(scene, assets, filename, options);
-                
+                if (!pdfBytes) {
+                    throw new Error('Nothing to render (no drawable geometry)');
+                }
+
                 // Ensure output directory exists then write
                 const destFileFolder = finalPdfPath.substring(0, finalPdfPath.lastIndexOf('/'));
                 await ensureDestDir(destFileFolder);
 
                 // writeBinaryFile expects ArrayBuffer
                 await window.Neutralino.filesystem.writeBinaryFile(finalPdfPath, pdfBytes.buffer ? pdfBytes.buffer : pdfBytes);
-                
+
                 successCount++;
             } catch (fileErr) {
                 console.error(`Error processing ${filename}:`, fileErr);
+                failures.push(`${filename}.asc — ${fileErr.message}`);
             }
         }
-        
-        welcomeMsg.innerHTML = `<h3>Batch Complete</h3><p>Processed ${successCount} of ${files.length} schematics successfully.</p>`;
+
+        // Name the files that failed. Previously the count was the only signal
+        // and the per-file reason went to the console alone.
+        if (failures.length === 0) {
+            showStatus('Batch Complete', `Processed ${successCount} of ${files.length} schematics successfully.`);
+        } else {
+            const shown = failures.slice(0, 10);
+            const body = `Processed ${successCount} of ${files.length}. ${failures.length} failed:`;
+            showStatusWithList(
+                'Batch Complete (with errors)',
+                failures.length > shown.length ? `${body} (first ${shown.length} shown)` : body,
+                shown,
+                true
+            );
+        }
     } catch (err) {
         console.error(err);
-        welcomeMsg.innerHTML = `<h3 style="color:var(--accent)">Error</h3><p>${err.message}</p>`;
+        showStatus('Error', err.message, true);
+    } finally {
+        isRendering = false;
+        if (runBatchBtn) runBatchBtn.disabled = !(batchOriginPath && batchDestPath);
     }
+}
+
+// Joins the destination folder with a relative path without destroying UNC
+// prefixes. The old code ran .replace(/\/\//g, '/') over the whole string,
+// which turned \server\share into /server/share.
+function joinDestPath(destFolder, relativePdfPath) {
+    const dest = destFolder.replace(/\\/g, '/').replace(/\/+$/, '');
+    const rel = relativePdfPath.replace(/\\/g, '/').replace(/^\/+/, '');
+    const uncPrefix = /^\/\//.test(dest) ? '//' : '';
+    const body = (dest + '/' + rel).replace(/^\/+/, '').replace(/\/{2,}/g, '/');
+    return uncPrefix + body;
 }
 
 // ── Format Specification Document Viewer ─────────────────────────
 
 let specCachedMarkdown = null;
 
+// Only these schemes are allowed to reach an href. Anything else (javascript:,
+// data:, vbscript:, …) becomes an inert span, so a malicious or mistaken link
+// in the fetched specification cannot execute.
+const SAFE_URL = /^(?:https?:\/\/|mailto:|#|\.{0,2}\/|[\w.-]+(?:\/|$)|[\w.-]+\.md)/i;
+
 function parseInlineElements(text) {
     return text
         .replace(/\*\*(.*?)\*\*/g, '<strong class="spec-strong">$1</strong>')
         .replace(/`(.*?)`/g, '<code class="spec-code">$1</code>')
-        .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" class="spec-link">$1</a>');
+        .replace(/\[(.*?)\]\((.*?)\)/g, (match, label, url) => {
+            const clean = url.trim();
+            if (!SAFE_URL.test(clean)) return `<span class="spec-link">${label}</span>`;
+            return `<a href="${clean}" target="_blank" rel="noopener noreferrer" class="spec-link">${label}</a>`;
+        });
 }
 
 function renderSpecTable(headers, rows) {
@@ -544,11 +759,17 @@ function renderSpecTable(headers, rows) {
 }
 
 function parseMarkdown(md) {
-    // Escape HTML to prevent rendering injection, except for newlines
+    // Escape HTML to prevent rendering injection, except for newlines.
+    // The double quote matters as much as the angle brackets: link URLs are
+    // interpolated straight into href="...", so an unescaped quote lets the
+    // source close the attribute and add its own (e.g. an event handler).
+    // The spec is normally a repo-local file, but openSpecViewer falls back to
+    // fetching it from GitHub over the network.
     let html = md
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 
     // Extract code blocks and replace with placeholders
     const codeBlocks = [];
@@ -676,9 +897,12 @@ function parseMarkdown(md) {
     let parsedHtml = result.join('\n');
     parsedHtml = parseInlineElements(parsedHtml);
 
-    // Substitute placeholders back
+    // Substitute placeholders back. The replacement MUST be a function: with a
+    // string, JS interprets $&, $`, $' and $n inside it, so a code block
+    // containing a dollar sign (plausible in SPICE syntax) got mangled and even
+    // leaked the placeholder text into the output.
     for (let i = 0; i < codeBlocks.length; i++) {
-        parsedHtml = parsedHtml.replace(`___CODE_BLOCK_PLACEHOLDER_${i}___`, codeBlocks[i]);
+        parsedHtml = parsedHtml.replace(`___CODE_BLOCK_PLACEHOLDER_${i}___`, () => codeBlocks[i]);
     }
 
     return parsedHtml;
@@ -738,12 +962,19 @@ async function openSpecViewer() {
     }
 }
 
+function isSpecViewerOpen() {
+    return !!specContainer && specContainer.style.display !== 'none';
+}
+
 function closeSpecViewer() {
     if (specContainer) {
         specContainer.style.display = 'none';
     }
     if (currentPdfBlob) {
         pdfContainer.style.display = 'block';
+    } else if (statusMsg && statusMsg.style.display !== 'none') {
+        // Keep the status/error panel up instead of replacing it with the welcome art.
+        statusMsg.style.display = 'block';
     } else {
         welcomeMsg.style.display = 'block';
     }
@@ -769,7 +1000,10 @@ if (footerSpecLink) {
 
 // Close on escape key
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
+    // Only act when the viewer is actually open. Unconditionally calling
+    // closeSpecViewer() let Escape force-swap panels at any time — including
+    // mid-batch, and it could resurrect a stale PDF.
+    if (e.key === 'Escape' && isSpecViewerOpen()) {
         closeSpecViewer();
     }
 });

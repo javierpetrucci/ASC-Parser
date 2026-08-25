@@ -626,12 +626,63 @@ body {
     text-shadow: 0 0 8px var(--accent-glow);
 }
 
+/* The welcome terminal is built from .term-line spans; it has no h3/p of its
+   own. Status and error messages live in #status-msg instead (see below) —
+   they used to be written into #welcome-msg, where these rules made every
+   error and all batch progress invisible. */
 #welcome-msg h3 {
-    display: none; /* hidden — replaced by .term-line */
+    display: none;
 }
 
 #welcome-msg p {
-    display: none; /* hidden — replaced by .term-line */
+    display: none;
+}
+
+/* =====================================================
+   STATUS / ERROR PANEL
+   ===================================================== */
+#status-msg {
+    text-align: left;
+    color: var(--text-main);
+    max-width: 500px;
+    width: 100%;
+    z-index: 10;
+    position: relative;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    padding: 1.5rem 2rem;
+    border: 1px solid #2a1f00;
+    background: rgba(8, 6, 0, 0.7);
+    backdrop-filter: blur(2px);
+    box-shadow: 0 0 40px rgba(255, 140, 0, 0.08);
+}
+
+#status-msg h3 {
+    margin: 0 0 0.6rem 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-shadow: 0 0 8px var(--accent-glow);
+}
+
+#status-msg p {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+    word-break: break-word;
+}
+
+#status-msg ul {
+    margin: 0.5rem 0 0 0;
+    padding-left: 1.1rem;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+}
+
+#status-msg .status-err {
+    color: #ff6b4a;
+    text-shadow: 0 0 8px rgba(255, 107, 74, 0.35);
 }
 
 /* =====================================================

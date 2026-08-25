@@ -2,25 +2,15 @@
   "name": "asc-parser",
   "version": "1.0.0",
   "description": "LTSpice to PDF renderer",
-  "main": "main.js",
   "scripts": {
     "start": "npx @neutralinojs/neu run",
-    "build": "node desktop/build_desktop.js"
+    "build": "node desktop/build_desktop.js",
+    "test": "node --test \"test/*.test.js\"",
+    "spec": "node tools/generate_spec_defaults.js",
+    "spec:check": "node tools/generate_spec_defaults.js --check",
+    "build:all": "node desktop/build_desktop.js --targets all",
+    "components": "node tools/generate_component_list.js",
+    "serve": "node tools/serve.js"
   },
-  "build": {
-    "appId": "com.ascparser.desktop",
-    "productName": "LTSpice to PDF",
-    "directories": {
-      "output": "dist"
-    },
-    "win": {
-      "target": "portable",
-      "icon": "Assets/UI/favicon/favicon-256x256.png"
-    }
-  },
-  "dependencies": {},
-  "devDependencies": {
-    "electron": "^29.1.5",
-    "electron-builder": "^24.13.3"
-  }
+  "dependencies": {}
 }

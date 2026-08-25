@@ -20,8 +20,10 @@
     <meta name="twitter:title" content="LTSpice to PDF Converter">
     <meta name="twitter:description" content="Professional schematic rendering and PDF export for LTSpice.">
 
-    <!-- jsPDF loaded for PDF Generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- jsPDF, vendored locally (v2.5.1). Loading it from a CDN meant the
+         desktop build could not convert anything offline, and on blocked
+         networks the failure surfaced as an unhandled TypeError. -->
+    <script src="vendor/jspdf.umd.min.js"></script>
 
     <!-- Shared Engine Scripts -->
     <script src="engine/parser.js"></script>
@@ -150,6 +152,9 @@
                 </span>
                 <span class="term-line"><span class="term-prompt">&gt;</span> Drop an ASY file anywhere on the screen...<span class="cursor"></span></span>
             </div>
+            <!-- Status / error panel: separate from #welcome-msg so messages are
+                 visible and never destroy the welcome terminal or #view-spec-btn -->
+            <div id="status-msg" style="display: none;"></div>
             <div id="spec-container" class="spec-container" style="display: none;">
                 <div class="spec-header">
                     <span class="spec-title">LTSpice ASC/ASY Format Specification</span>

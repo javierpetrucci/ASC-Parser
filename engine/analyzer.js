@@ -2,18 +2,44 @@
 // Fetches and parses .asy files to extract default WINDOW positions and SYMATTR values
 // for special/custom components.
 
-async function fetchAsy(componentPath) {
-    // We map this to "Assets/Component Symbols/[cleanedPath].asy"
-    const cleanedPath = componentPath.replace(/\\/g, '/');
-    const url = `Assets/Component Symbols/${cleanedPath}.asy?t=${Date.now()}`;
+// Normalizes a SYMBOL type token into a URL path under the symbols directory.
+// .asc files store library paths with DOUBLED backslashes (e.g. "TCLib\\\\OA_Ideal"),
+// and a naive backslash->slash swap turned those into "TCLib//OA_Ideal", producing
+// URLs with empty path segments that the Neutralino resource loader rejected
+// (NE_RS_UNBLDRE). Collapse runs of separators and strip leading ones.
+function asyPathToUrlPath(componentPath) {
+    return String(componentPath)
+        .replace(/\\/g, '/')
+        .replace(/\/{2,}/g, '/')
+        .replace(/^\/+/, '');
+}
 
+// Cache keyed by symbol type. analyzeSceneSymbols used to fetch once per symbol
+// INSTANCE, so a schematic with 20 resistors issued 20 identical requests, and
+// the per-request cache-buster guaranteed every one of them missed the cache.
+const asyCache = new Map();
+
+async function fetchAsy(componentPath) {
+    const key = asyPathToUrlPath(componentPath);
+    if (asyCache.has(key)) return asyCache.get(key);
+
+    const url = `Assets/Component Symbols/${key}.asy`;
+    let result = null;
     try {
         const response = await fetch(url);
-        if (!response.ok) return null;
-        return await response.text();
+        if (response.ok) {
+            result = await response.text();
+        } else {
+            // The .asy is the canonical source of which WINDOW indexes exist, so a
+            // miss silently costs the component its attribute labels. Say so.
+            console.warn(`[ASY] Not found (${response.status}): ${url}`);
+        }
     } catch (e) {
-        return null;
+        console.warn(`[ASY] Fetch failed: ${url}`, e);
     }
+
+    asyCache.set(key, result);
+    return result;
 }
 
 function parseAsy(asyText) {
@@ -126,18 +152,25 @@ function parseAsy(asyText) {
     return asyData;
 }
 
-async function analyzeSceneSymbols(scene, assets = null) {
-    const promises = scene.symbols.map(async (sym) => {
-        // ALWAYS fetch the ASY file for every symbol.
-        // The ASY file is the canonical source of truth for which WINDOW indexes
-        // exist (0, 3, 39, 40, 123), so we must always read it regardless of
-        // whether an SVG skin is selected. The renderer uses asyData.windows to
-        // determine which attribute labels to draw.
-        const asyText = await fetchAsy(sym.type);
-        if (asyText) {
-            sym.asyData = parseAsy(asyText);
-        }
-    });
+async function analyzeSceneSymbols(scene) {
+    // ALWAYS resolve the ASY file for every symbol TYPE.
+    // The ASY file is the canonical source of truth for which WINDOW indexes
+    // exist (0, 3, 39, 40, 123), so we must always read it regardless of
+    // whether an SVG skin is selected. The renderer uses asyData.windows to
+    // determine which attribute labels to draw.
+    //
+    // Deduplicated by type: one fetch and one parse per distinct component,
+    // shared across all its instances.
+    const types = [...new Set(scene.symbols.map(sym => sym.type))];
 
-    await Promise.all(promises);
+    const parsedByType = new Map();
+    await Promise.all(types.map(async (type) => {
+        const asyText = await fetchAsy(type);
+        if (asyText) parsedByType.set(type, parseAsy(asyText));
+    }));
+
+    for (const sym of scene.symbols) {
+        const asyData = parsedByType.get(sym.type);
+        if (asyData) sym.asyData = asyData;
+    }
 }

@@ -8,15 +8,21 @@
  *   2. Rotation-equivalent (M90 → R90) — use it as-is, then apply mirror transform.
  *   3. R0 — fall back, apply full rotate+mirror transform.
  *
- * Components with only R0 defined (e, g, npn, …) are treated as "formula" components:
- *   all orientations are derived by rotating R0 through transformOffset / transformAlignment.
+ * Every entry below defines all four of R0/R90/R180/R270; the M orientations are
+ * derived from the matching Rxx entry by applying the mirror transform.
  *
- * Components with R0…R270 defined have M orientations derived from the matching Rxx entry.
+ * IMPORTANT: the ox/oy/align stored here are in LOCAL (pre-rotation) space, even
+ * inside a per-orientation entry. pdf_renderer.js always runs them through
+ * transformOffset / transformAlignment with the symbol's orientation. So two
+ * orientations holding identical values do NOT render identically, and a
+ * horizontal keyword like 'Left' inside an R90/R270 entry is perfectly normal —
+ * it becomes a vertical one after the transform.
  *
- * Components with all 8 keys explicitly defined use exact values with no derivation.
+ * (Rules 1 and 3 above are supported by the resolver but currently unused: no
+ * entry is R0-only, and none defines all 8 keys explicitly.)
  *
  * To populate / tune values, use the Window Tuner dev tool at:
- *   http://127.0.0.1:8000/web/dev_window_tuner.html
+ *   http://127.0.0.1:8000/tools/dev_window_tuner.html
  */
 
 const COMPONENT_DEFAULTS = {
@@ -204,7 +210,7 @@ const COMPONENT_DEFAULTS = {
         R270: { 0: { ox: 34, oy: 55, align: 'VTop' }, 3: { ox: -35, oy: 55, align: 'VBottom' } },
     },
 
-    // ── Dependent Sources (R0 only → all orientations are derived) ──────
+    // ── Dependent Sources ───────────────────────────────────────────────
     e: {
         R0: { 0: { ox: 18, oy: 17, align: 'Left' }, 3: { ox: 18, oy: 94, align: 'Left' } },
         R90: { 0: { ox: 24, oy: 90, align: 'VRight' }, 3: { ox: 24, oy: 22, align: 'VLeft' } },
@@ -251,7 +257,7 @@ const COMPONENT_DEFAULTS = {
         R270: { 3: { ox: -139, oy: 48, align: 'Center' } },
     },
 
-    // ── Transistors (R0 only → all orientations derived) ────────────────
+    // ── Transistors ─────────────────────────────────────────────────────
     npn: {
         R0: { 0: { ox: 91, oy: 48, align: 'Right' }, 3: { ox: 74, oy: 101, align: 'Left' } },
         R90: { 0: { ox: 61, oy: 49, align: 'VTop' }, 3: { ox: 96, oy: 49, align: 'VTop' } },
@@ -460,3 +466,15 @@ const COMPONENT_DEFAULTS = {
     },
 
 }; // end COMPONENT_DEFAULTS
+
+// Case-insensitive index. 21 of the keys above are mixed-case (NPN_ideal,
+// OA_Ideal, TL082, '74HCU04 Not', …), so a case-sensitive lookup silently
+// returned undefined for any .asc that spelled the type differently — the
+// component then lost its label positions with no diagnostic.
+const COMPONENT_DEFAULTS_BY_KEY = new Map(
+    Object.entries(COMPONENT_DEFAULTS).map(([name, table]) => [name.toLowerCase(), table])
+);
+
+function lookupComponentDefaults(type) {
+    return COMPONENT_DEFAULTS_BY_KEY.get(String(type).toLowerCase());
+}
