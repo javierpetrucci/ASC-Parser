@@ -101,7 +101,11 @@
             </div>
 
             <div id="drop-zone" class="drag-hint" onclick="document.getElementById('file-input').click()">
-                <div class="hint-icon">📄</div>
+                <svg class="hint-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M6 2.5h8l4 4V21a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 6 21V3a.5.5 0 0 1 .5-.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+                    <path d="M14 2.5V6a1 1 0 0 0 1 1h3.5" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+                    <path d="M9 13.2l2.1 2.1L15.5 11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
                 <p>Drag & drop or Click to select .asc files</p>
                 <input type="file" id="file-input" accept=".asc" style="display: none;">
             </div>
@@ -117,12 +121,18 @@
             <div id="batch-box" class="options-area" style="display: none; padding-top: 1rem;">
                 <h3 class="section-title">Batch Process</h3>
                 <div class="folder-selector" id="select-origin-btn" title="Click to select Origin folder">
-                    <span class="folder-label">📁 Origin:</span>
+                    <svg class="folder-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M3 6.2a1 1 0 0 1 1-1h4.4l1.6 2h9a1 1 0 0 1 1 1v10.1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="folder-label">Origin:</span>
                     <span class="folder-name" id="origin-folder-name">None</span>
                 </div>
                 <div class="folder-selector" id="select-dest-btn" title="Click to select Destination folder"
                     style="margin-top: 0.5rem;">
-                    <span class="folder-label">📁 Dest:</span>
+                    <svg class="folder-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M3 6.2a1 1 0 0 1 1-1h4.4l1.6 2h9a1 1 0 0 1 1 1v10.1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="folder-label">Dest:</span>
                     <span class="folder-name" id="dest-folder-name">None</span>
                 </div>
                 <button id="run-batch-btn" class="secondary-btn"
