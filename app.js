@@ -4,6 +4,7 @@ const dropOverlay = document.getElementById('drop-overlay');
 const fileInput = document.getElementById('file-input');
 const browseBtn = document.getElementById('browse-btn');
 const downloadBtn = document.getElementById('download-btn');
+const downloadTexBtn = document.getElementById('download-tex-btn');
 const pdfContainer = document.getElementById('pdf-container');
 const welcomeMsg = document.getElementById('welcome-msg');
 const statusMsg = document.getElementById('status-msg');
@@ -19,6 +20,10 @@ const closeSpecBtn = document.getElementById('close-spec-btn');
 
 let currentPdfBlob = null;
 let currentFilename = 'schematic';
+// Everything the TikZ exporter needs, kept from the last successful render.
+// The .tex is produced on click rather than alongside every PDF: the scene and
+// the skin SVGs are already in memory, so nothing is re-fetched or re-parsed.
+let currentRenderInput = null;
 // Guards processFile/processBatch against overlapping runs. Without it, dropping
 // a second file (or toggling an option) mid-render made the in-flight render
 // pick up the newer filename, and let two batches write to the same folder.
@@ -165,6 +170,35 @@ downloadBtn.addEventListener('click', () => {
     }
 });
 
+// Export the same drawing as TikZ source. It runs the very same renderer as the
+// PDF (see engine/tikz_renderer.js), so what compiles is what the viewer shows.
+if (downloadTexBtn) {
+    downloadTexBtn.addEventListener('click', async () => {
+        if (!currentRenderInput) return;
+        const { scene, assets, filename, options } = currentRenderInput;
+        try {
+            consolePrint('  exporting TikZ source...', 'muted');
+            const tex = await window.LTSpiceEngine.renderTikz(scene, assets, filename, options);
+            if (!tex) throw new Error('Nothing to export — this schematic has no drawable geometry.');
+
+            const url = URL.createObjectURL(new Blob([tex], { type: 'application/x-tex' }));
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename + '.tex';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            consolePrint(`[ OK ] done — ${filename}.tex`, 'ok');
+        } catch (err) {
+            console.error(err);
+            consolePrint(`[ERR] ${err.message}`, 'err');
+            showStatus('Error', err.message, true);
+        }
+    });
+}
+
 // Neutralino Batch Processing
 const batchBox = document.getElementById('batch-box');
 const originBtn = document.getElementById('select-origin-btn');
@@ -287,6 +321,8 @@ async function prepareAssets(scene) {
     // TC2_Rough ships no artwork of its own - it reads Default's and redraws it
     // freehand in the renderer, which is why it can never drift out of date.
     assets.rough = selectedSkin === ROUGH_SKIN;
+    // Only read by the TikZ export, to name the skin in the generated file's header.
+    assets.skinName = selectedSkin;
     const sourceSkin = assets.rough ? 'Default' : selectedSkin;
 
     const promises = Array.from(neededTypes).map(async (type) => {
@@ -544,6 +580,7 @@ async function processFile(file) {
         // ── 6. Update viewer ──────────────────────────────────
         consoleStage(mySequenceId, '  building blob URL...', 'muted');
         currentPdfBlob = new File([pdfBytes], `${filename}.pdf`, { type: 'application/pdf' });
+        currentRenderInput = { scene, assets, filename, options };
         setPdfViewer(URL.createObjectURL(currentPdfBlob));
 
         consoleStage(mySequenceId, `[ OK ] done — ${filename}.pdf`, 'ok');
@@ -557,7 +594,9 @@ async function processFile(file) {
         // a file that did not match the current options.
         clearPdfViewer();
         currentPdfBlob = null;
+        currentRenderInput = null;
         downloadBtn.disabled = true;
+        if (downloadTexBtn) downloadTexBtn.disabled = true;
     } finally {
         isRendering = false;
     }
@@ -573,6 +612,7 @@ function setPdfViewer(blobUrl) {
     pdfContainer.innerHTML = `<iframe id="pdf-viewer" src="${blobUrl}#view=FitH" style="width:100%;height:100%;border:none;"></iframe>`;
     pdfContainer.style.display = 'block';
     downloadBtn.disabled = false;
+    if (downloadTexBtn) downloadTexBtn.disabled = false;
 }
 
 function clearPdfViewer() {

@@ -17,6 +17,7 @@ const ENGINE_FILES = [
     'engine/component_defaults.js',
     'engine/rough_pen.js',
     'engine/pdf_renderer.js',
+    'engine/tikz_renderer.js',
     'engine/index.js',
 ];
 
@@ -29,6 +30,7 @@ const EXPORTED = [
     'getWindowText', 'resolveAttrValue',
     'asyPathToUrlPath', 'pinAlignmentToTextAlignment',
     'drawSvgToPdf', 'drawLTSpiceText',
+    'texEscape', 'tikzNum',
     'COMPONENT_DEFAULTS', 'TRANSISTOR_BASENAMES',
 ];
 
@@ -109,7 +111,7 @@ function loadEngineWithPdf() {
         .join('\n;\n');
     vm.runInContext(combined, sandbox, { filename: 'engine.bundle.js' });
 
-    const exported = vm.runInContext('({' + EXPORTED.join(', ') + ', convertSceneToPdf, analyzeSceneSymbols})',
+    const exported = vm.runInContext('({' + EXPORTED.join(', ') + ', convertSceneToPdf, convertSceneToTikz, analyzeSceneSymbols})',
         sandbox, { filename: 'engine.exports.js' });
 
     return Object.assign(sandbox, exported);

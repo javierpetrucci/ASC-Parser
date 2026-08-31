@@ -1017,12 +1017,17 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
     if (!window.jspdf || !window.jspdf.jsPDF) {
         throw new Error('jsPDF failed to load — check your connection or the local vendored copy.');
     }
-    const doc = new window.jspdf.jsPDF({
-        orientation: width > height ? 'l' : 'p',
+    // Every draw below goes through this one object, and it is touched through a
+    // small, stable surface (line/rect/ellipse/lines/text/path + graphics state).
+    // `options.docFactory` swaps in a different sink — that is how the TikZ
+    // exporter reuses this whole renderer instead of duplicating it.
+    const makeDoc = options.docFactory || ((spec) => new window.jspdf.jsPDF({
+        orientation: spec.width > spec.height ? 'l' : 'p',
         unit: 'pt',
-        format: [width, height],
+        format: [spec.width, spec.height],
         putOnlyUsedFonts: false // Disable subsetting where possible to ensure full font embedding
-    });
+    }));
+    const doc = makeDoc({ width, height, filename, assets, options });
     doc.setProperties({ title: filename });
 
     // 3. Register Font (if passed through assets)
