@@ -45,7 +45,12 @@ const pdfViewer = document.getElementById('pdf-viewer');
 const copyBtn = document.getElementById('copy-btn');
 const statusBar = document.getElementById('status-bar');
 
-// ── Tuner state: [orientation][windowIndex] = {ox, oy, align} ──────────
+// ── Tuner state: [orientation][windowIndex] = {ox, oy, align, fontSize} ──
+// fontSize is the LTSpice size index (0–7); 2 is the normal label size and the
+// default for every window that does not say otherwise.
+const DEFAULT_FONT_SIZE = 2;
+const FONT_SIZE_OPTIONS = [0, 1, 2, 3, 4, 5, 6, 7];
+const blankWindow = () => ({ ox: 0, oy: 0, align: 'Left', fontSize: DEFAULT_FONT_SIZE });
 let state = {};
 let renderTimer = null;
 let activeWindows = [0, 3];
@@ -136,8 +141,8 @@ function buildAscText(comp) {
         asc += `SYMBOL ${escapedComp} ${x} ${y} ${ori}\n`;
 
         for (const win of activeWindows) {
-            const w = s[win] || { ox: 0, oy: 0, align: 'Left', fontSize: 2 };
-            asc += `WINDOW ${win} ${w.ox} ${w.oy} ${w.align} 2\n`;
+            const w = s[win] || blankWindow();
+            asc += `WINDOW ${win} ${w.ox} ${w.oy} ${w.align} ${w.fontSize ?? DEFAULT_FONT_SIZE}\n`;
         }
 
         if (activeWindows.includes(0)) asc += `SYMATTR InstName U${i + 3}\n`;
@@ -194,7 +199,7 @@ function readEl(ori, win, prop) {
 function syncFromEl(el) {
     const { ori, win, prop } = el.dataset;
     if (!state[ori]) state[ori] = {};
-    if (!state[ori][win]) state[ori][win] = { ox: 0, oy: 0, align: 'Left' };
+    if (!state[ori][win]) state[ori][win] = blankWindow();
     state[ori][win][prop] = (prop === 'align') ? el.value : (parseInt(el.value) || 0);
     updateOutput();
     queueRender();
@@ -217,12 +222,15 @@ function loadDefaults(comp) {
                 // M90 → try M90 first, then R90 (same angle), then R0
                 const rotEquiv = ori.startsWith('M') ? 'R' + ori.slice(1) : ori;
                 const row = defs[ori] || defs[rotEquiv] || defs['R0'] || {};
-                def = row[win] || { ox: 0, oy: 0, align: 'Left' };
+                def = row[win] || blankWindow();
             } else {
                 // Flat table: single entry applies to all orientations
-                def = defs[win] || { ox: 0, oy: 0, align: 'Left' };
+                def = defs[win] || blankWindow();
             }
-            state[ori][win] = { ox: def.ox, oy: def.oy, align: def.align };
+            state[ori][win] = {
+                ox: def.ox, oy: def.oy, align: def.align,
+                fontSize: def.fontSize ?? DEFAULT_FONT_SIZE,
+            };
         }
     }
     syncToDOM();
@@ -237,6 +245,7 @@ function syncToDOM() {
             readEl(ori, win, 'ox').value = s.ox;
             readEl(ori, win, 'oy').value = s.oy;
             readEl(ori, win, 'align').value = s.align;
+            readEl(ori, win, 'fontSize').value = s.fontSize ?? DEFAULT_FONT_SIZE;
         }
     }
 }
@@ -253,8 +262,12 @@ function updateOutput() {
         out += `        ${ori}: { `;
         const entries = [];
         for (const win of activeWindows) {
-            const w = state[ori]?.[win] || { ox: 0, oy: 0, align: 'Left' };
-            entries.push(`${win}: { ox: ${w.ox}, oy: ${w.oy}, align: '${w.align}' }`);
+            const w = state[ori]?.[win] || blankWindow();
+            // fontSize is only emitted when it is not the normal size, so a
+            // routine tuning session does not add noise to every table row.
+            const size = (w.fontSize ?? DEFAULT_FONT_SIZE) === DEFAULT_FONT_SIZE
+                ? '' : `, fontSize: ${w.fontSize}`;
+            entries.push(`${win}: { ox: ${w.ox}, oy: ${w.oy}, align: '${w.align}'${size} }`);
         }
         out += entries.join(', ') + ` },\n`;
     }
@@ -281,6 +294,7 @@ function buildControls() {
             else if (win === 123) labelText += ' — Value2';
 
             const alignOpts = ALIGN_OPTIONS.map(o => `<option value="${o}">${o}</option>`).join('');
+            const sizeOpts = FONT_SIZE_OPTIONS.map(o => `<option value="${o}">${o}</option>`).join('');
             return `
                 <div class="window-group">
                     <div class="window-label">${labelText}</div>
@@ -291,6 +305,9 @@ function buildControls() {
                         <input type="number" id="w${win}-oy-${ori}" data-ori="${ori}" data-win="${win}" data-prop="oy" step="1" value="0">
                         <select id="w${win}-align-${ori}" data-ori="${ori}" data-win="${win}" data-prop="align">
                             ${alignOpts}
+                        </select>
+                        <select class="size-sel" title="Font size index (2 = normal)" id="w${win}-fontSize-${ori}" data-ori="${ori}" data-win="${win}" data-prop="fontSize">
+                            ${sizeOpts}
                         </select>
                     </div>
                 </div>`;
@@ -334,8 +351,11 @@ function seedMirrorFromR() {
         const src = state[rOri] || {};
         state[ori] = {};
         for (const win of activeWindows) {
-            const s = src[win] || { ox: 0, oy: 0, align: 'Left' };
-            state[ori][win] = { ox: s.ox, oy: s.oy, align: s.align };
+            const s = src[win] || blankWindow();
+            state[ori][win] = {
+                ox: s.ox, oy: s.oy, align: s.align,
+                fontSize: s.fontSize ?? DEFAULT_FONT_SIZE,
+            };
         }
     }
 }
@@ -373,6 +393,20 @@ async function loadComponentTuner(comp) {
         } else {
             currentAttrs = {};
         }
+
+        // A defaults table may name windows the .asy never declares — pot's
+        // InstName is one: pot.asy has no WINDOW 0, yet in override mode the
+        // renderer draws "P1" from component_defaults.js. Those indexes have to
+        // be tunable here too, so both sources are unioned.
+        const defs = (window.LTSpiceEngine.defaults || {})[comp.split('/').pop()] || {};
+        const isOriented = ['R0', 'R90', 'R180', 'R270'].some(k => k in defs);
+        for (const row of (isOriented ? Object.values(defs) : [defs])) {
+            for (const idx of Object.keys(row)) {
+                const n = parseInt(idx);
+                if (Number.isFinite(n)) candidateIndexes.add(n);
+            }
+        }
+
         activeWindows = Array.from(candidateIndexes).sort((a, b) => a - b);
     } else {
         activeWindows = [0, 3]; // fallback if analyzer not loaded

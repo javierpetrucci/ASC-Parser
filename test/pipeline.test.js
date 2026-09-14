@@ -98,6 +98,34 @@ test('the .asy analyzer resolves pathed types against the real asset tree', asyn
     assert.ok(sym.asyData.windows, 'no WINDOW definitions parsed');
 });
 
+test('the page is sized to the symbol artwork, in every orientation', async () => {
+    // The bounds pass used to treat every symbol as a 100x100 box reaching down
+    // and right of its anchor. ASSD_LF398 is a 256x224 block, and at R180/R270
+    // the artwork grows UP and LEFT — so the box and the symbol barely
+    // overlapped and half the component hung off the sheet.
+    const BS = String.fromCharCode(92);
+    const MARGIN = 100; // applied on each side by the bounds pass
+
+    for (const [ori, artW, artH] of [['R0', 256, 224], ['R90', 224, 256],
+                                     ['R180', 256, 224], ['R270', 224, 256]]) {
+        const asc = [
+            'Version 4.1', 'SHEET 1 880 680',
+            `SYMBOL TCLib${BS}${BS}ASSD${BS}${BS}ASSD_LF398 400 400 ${ori}`,
+            'SYMATTR InstName U1', '',
+        ].join('\n');
+
+        const buf = await render(asc);
+        assert.ok(buf, `${ori}: nothing rendered`);
+        const raw = new TextDecoder('latin1').decode(new Uint8Array(buf));
+        const box = raw.match(/\/MediaBox\s*\[([\d.\s-]+)\]/);
+        assert.ok(box, `${ori}: no /MediaBox`);
+        const [, , w, h] = box[1].trim().split(/\s+/).map(Number);
+
+        assert.ok(w >= artW + 2 * MARGIN, `${ori}: page ${w}pt wide cannot hold ${artW}pt of artwork`);
+        assert.ok(h >= artH + 2 * MARGIN, `${ori}: page ${h}pt tall cannot hold ${artH}pt of artwork`);
+    }
+});
+
 test('overrideAnchors changes label placement', async () => {
     const asc = 'Version 4.1\nSYMBOL res 0 0 R90\nSYMATTR InstName R1\nSYMATTR Value 1k\n';
     const on  = await render(asc, { options: { overrideAnchors: true } });

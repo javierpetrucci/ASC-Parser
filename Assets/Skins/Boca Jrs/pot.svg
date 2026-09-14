@@ -40,4 +40,7 @@
     <polygon points="29.1 81 30.2 85.3 31.4 81 29.1 81"/>
     <polygon points="31.4 73.9 30.2 69.6 29.1 73.9 31.4 73.9"/>
   </g>
+  <!-- Same letter, size and spot as the TEXT in TCLib/pot.asy — see the note in
+       the Default skin's pot.svg. -->
+  <text x="38" y="83.4" font-size="8">k</text>
 </svg>

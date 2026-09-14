@@ -30,4 +30,10 @@
     <polygon points="29.1 81 30.2 85.3 31.4 81 29.1 81"/>
     <polygon points="31.4 73.9 30.2 69.6 29.1 73.9 31.4 73.9"/>
   </g>
+  <!-- Labels the double arrow above. Same letter, size and spot as the TEXT in
+       TCLib/pot.asy: a skin replaces the .asy artwork wholesale, and the .asy's
+       TEXT primitives are only drawn when no skin exists, so the letter has to
+       live here too or it is lost. y is the baseline (the .asy centres 8pt text
+       on y=81), hence 83.4. -->
+  <text x="38" y="83.4" font-size="8">k</text>
 </svg>

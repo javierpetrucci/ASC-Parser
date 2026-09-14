@@ -61,30 +61,31 @@
 // Units are LTSpice symbol units (1u = 1pt). A resistor body is 22 x 58u.
 
 var DEFAULTS = {
-    warp:        0.55,  // amplitude of the per-symbol 2-D distortion field
-    warpPeriod:  55,    // its wavelength, comparable to a symbol so it bends
-    tremor:      0.30,  // hand unsteadiness along a stroke
-    bow:         0.55,  // arc of a nominally straight line, per 48u of length
-    overshoot:   1.00,  // how far the pen slides past a free end
-    overshootP:  0.65,  // fraction of free ends that overshoot at all
-    lock:        5.0,   // straight, undisplaced approach around a pin
-    step:        2.5,   // arc-length resample step
+    warp:        0.8,   // amplitude of the per-symbol 2-D distortion field
+    warpPeriod:  115,   // its wavelength, comparable to a symbol so it bends
+    tremor:      0.18,  // hand unsteadiness along a stroke
+    bow:         0.3,   // arc of a nominally straight line, per 48u of length
+    overshoot:   1.2,   // how far the pen slides past a free end
+    overshootP:  0.1,   // fraction of free ends that overshoot at all
+    lock:        8.5,   // straight, undisplaced approach around a pin
+    step:        5.5,   // arc-length resample step
     edgeFade:    3.0,   // distance over which tremor fades out at a stroke end
-    cornerAngle: 30,    // turn (deg) that breaks a stroke in two
+    cornerAngle: 55,    // turn (deg) that breaks a stroke in two
     rotateMax:   2.0,   // max rigid rotation (deg) of a small filled mark
     rotateBelow: 24,    // ... applied only to marks smaller than this
-    seamOverlap: 12,    // deg a closed smooth stroke overlaps its own start
+    markWobble:  0.25,  // how far a filled mark's outline strays from perfect
+    seamOverlap: 24,    // deg a closed smooth stroke overlaps its own start
     pinTol:      1.0,   // how near geometry must pass a pin to be snapped to it
     precision:   2,     // output decimals
 
     // One pen draws the whole symbol. The Default artwork mixes 0.5, 0.55, 1.0,
     // 1.5 and 1.8-unit ink; a hand redrawing it would not swap nibs.
-    penWidth:    1.5,
+    penWidth:    2.5,
 
     // Shape-role resolution
-    ribbonMax:   3.0,   // widest filled sliver still read as a drawn line
+    ribbonMax:   2.2,   // widest filled sliver still read as a drawn line
     ribbonCap:   1.8,   // a cap edge is at most this many times the width
-    outlineMin:  4.0,   // smallest solid shape traced as an outline
+    outlineMin:  10.5,  // smallest solid shape traced as an outline
     outlineMax:  6,     // most corners a traced outline may have
     cornerWin:   3.0,   // distance window for corner detection
     cornerMin:   28,    // degrees of turn that counts as a corner
@@ -940,8 +941,9 @@ function addOvershoot(out, src, taper, rand, opt, atEnd, strokeLen) {
     if (atEnd) out.push(pt); else out.unshift(pt);
 }
 
-// A mark rides the warp only, plus a slight rigid rotation when it is small.
-function penMark(pts, rand, opt, warp, taper, anchors) {
+// A mark rides the warp, plus a slight rigid rotation when it is small and a
+// little irregularity around its outline.
+function penMark(pts, closed, rand, opt, warp, taper, anchors) {
     var box = bbox(pts);
     var out = pts;
 
@@ -958,6 +960,40 @@ function penMark(pts, rand, opt, warp, taper, anchors) {
         out = pts.map(function (p) {
             var dx = p[0] - pivot[0], dy = p[1] - pivot[1];
             return [pivot[0] + dx * cs - dy * sn, pivot[1] + dx * sn + dy * cs];
+        });
+    }
+
+    // The warp is smooth over tens of units, so across an 8-unit junction dot it
+    // is very nearly a constant: the dot just slides, and stays a flawless
+    // circle, which is the one thing that gives the whole drawing away. This
+    // walks the outline instead, so a filled mark comes out slightly off-round.
+    // Harmonics are whole numbers of turns so the contour still closes, and the
+    // amplitude is capped against the mark's own size - a 1-unit minus glyph
+    // gets a nudge, not a mangling.
+    // Capped against the mark's own INK width (2*area/perimeter), not its
+    // bounding box: a plus glyph is 9x9 but its arms are one unit across, and
+    // that is the dimension a wobble would eat into.
+    var perim = pathLength(pts, true);
+    var inkWidth = perim ? 2 * polyArea(pts) / perim : 0;
+    var amp = Math.min(opt.markWobble, 0.25 * inkWidth);
+    if (closed && amp > 0.001 && out.length > 6) {
+        var n = out.length, oct = [];
+        for (var k = 0; k < 2; k++) {
+            oct.push({
+                f: 2 + k + Math.floor(rand() * 3),
+                phase: rand() * Math.PI * 2,
+                amp: amp / (k + 1)
+            });
+        }
+        out = out.map(function (p, i) {
+            var prev = out[(i - 1 + n) % n], next = out[(i + 1) % n];
+            var tx = next[0] - prev[0], ty = next[1] - prev[1];
+            var tl = Math.sqrt(tx * tx + ty * ty) || 1;
+            var u = i / n, d = 0;
+            for (var o = 0; o < oct.length; o++) {
+                d += oct[o].amp * Math.sin(2 * Math.PI * oct[o].f * u + oct[o].phase);
+            }
+            return [p[0] + (-ty / tl) * d, p[1] + (tx / tl) * d];
         });
     }
 
@@ -1009,7 +1045,7 @@ function roughen(svgText, options) {
 
             if (fig.role === 'mark') {
                 strokes.push({ fig: fig, closed: sub.closed,
-                               pts: penMark(sub.pts, r2, opt, warp, taper, res.anchors) });
+                               pts: penMark(sub.pts, sub.closed, r2, opt, warp, taper, res.anchors) });
                 continue;
             }
 

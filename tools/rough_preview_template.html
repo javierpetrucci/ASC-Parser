@@ -90,7 +90,6 @@ body {
 
 @media (max-width: 940px) {
     .shell { grid-template-columns: minmax(0, 1fr); gap: 20px; }
-    .rail  { position: static !important; }
 }
 
 /* ── Masthead ───────────────────────────────────────────────────────────── */
@@ -124,8 +123,6 @@ body {
 /* ── Control rail ───────────────────────────────────────────────────────── */
 
 .rail {
-    position: sticky;
-    top: 20px;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 4px;
@@ -133,6 +130,23 @@ body {
     display: flex;
     flex-direction: column;
     gap: 18px;
+}
+
+/* Fourteen sliders are taller than most viewports. While the rail is a sticky
+   sidebar it must scroll on its own, or sticky pins it in place and the last
+   controls sit permanently below the fold — page scroll moves the sheet, not the
+   rail. Sticky and its cap are declared together here, for the only layout that
+   wants either: stacked below 941px the rail scrolls with the page, where a cap
+   would just clip it. */
+@media (min-width: 941px) {
+    .rail {
+        position: sticky;
+        top: 20px;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+    }
 }
 
 .rail h2 {
@@ -270,7 +284,8 @@ button.primary { background: var(--accent-bg); border-color: var(--accent); colo
 
 .panel.is-src .frame { border-color: var(--accent); }
 
-.frame svg { display: block; }
+.frame svg,
+.frame canvas { display: block; }
 
 footer.legend {
     grid-column: 1 / -1;
@@ -297,7 +312,11 @@ footer.legend {
             seeds apiece. Red crosshairs mark the <code>.asy</code> <code>PIN</code> coordinates a
             schematic wire arrives at &mdash; a stroke has to land on one exactly. The faint grid is
             LTSpice&rsquo;s own 16-unit spacing. Panels stay on white because the PDF prints black ink
-            on white. Tune the pen below; the values you settle on become the defaults.
+            on white. Every panel is drawn by the app&rsquo;s own renderer, <code>drawSvgToPdf</code>,
+            so what you see here is what the PDF exports. Tune the pen below, then
+            <strong>Copy DEFAULTS</strong> hands back the whole block from
+            <code>engine/rough_pen.js</code> &mdash; comments and untouched keys intact &mdash;
+            to paste straight over the original.
         </p>
     </div>
 
@@ -332,7 +351,7 @@ footer.legend {
         <div class="row">
             <button id="reseed" class="primary" type="button">Reseed</button>
             <button id="reset" type="button">Reset</button>
-            <button id="copy" type="button">Copy settings</button>
+            <button id="copy" type="button">Copy DEFAULTS</button>
         </div>
     </aside>
 
@@ -346,5 +365,8 @@ footer.legend {
 </div>
 
 <script>/*__PEN__*/</script>
+<script>/*__RENDERER__*/</script>
+<script>/*__CANVAS__*/</script>
 <script>var COMPONENTS = /*__DATA__*/;</script>
+<script>var DEFAULTS_SRC = /*__DEFAULTS_SRC__*/;</script>
 <script>/*__APP__*/</script>

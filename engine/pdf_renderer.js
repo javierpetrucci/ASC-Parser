@@ -97,54 +97,110 @@ function resolveAttrValue(sym, attrName) {
     return sym.asyData?.attrs?.[attrName] || '';
 }
 
+// Formats a passive component's value the way a printed schematic shows it:
+// the stored SPICE magnitude with its unit appended ("10k" → "10kΩ", "100n" →
+// "100nF", "10m" → "10mHy"). Factored out of getWindowText because the pot
+// exception below prints a resistance too, and a second copy of the suffix
+// rules there would drift away from this one.
+function formatPassiveValue(kind, val) {
+    if (!val) return val;
+    let workingVal = String(val).trim();
+
+    // A value written with LaTeX carries its own units, so the automatic
+    // suffix is not wanted: "$100\,\Omega$" would otherwise print the
+    // ohm sign twice, and "$4.7\,\mu F$" would come out as "µFF".
+    if (/[$\\]/.test(workingVal)) return val;
+
+    // Check if it's just the default placeholder letter; if so skip unit append
+    if ((kind === 'res' && workingVal.toUpperCase() === 'R') ||
+        (kind === 'cap' && workingVal.toUpperCase() === 'C') ||
+        (kind === 'ind' && workingVal.toUpperCase() === 'L')) {
+        return workingVal;
+    }
+
+    // Step 1: Remove trailing units from source (F, H, Hy) for cap/ind
+    if (kind === 'cap' && workingVal.toLowerCase().endsWith('f')) {
+        workingVal = workingVal.substring(0, workingVal.length - 1).trim();
+    } else if (kind === 'ind') {
+        if (workingVal.toLowerCase().endsWith('hy')) {
+            workingVal = workingVal.substring(0, workingVal.length - 2).trim();
+        } else if (workingVal.toLowerCase().endsWith('h')) {
+            workingVal = workingVal.substring(0, workingVal.length - 1).trim();
+        }
+    }
+
+    // Step 2: Handle suffixes (meg -> M, M/m -> m)
+    if (workingVal.toLowerCase().endsWith('meg')) {
+        workingVal = workingVal.substring(0, workingVal.length - 3) + 'M';
+    } else if (workingVal.toLowerCase().endsWith('m')) {
+        // Both 'M' and 'm' in LTSpice mean milli
+        workingVal = workingVal.substring(0, workingVal.length - 1) + 'm';
+    }
+
+    // Step 3: Append final units
+    if (kind === 'res') return workingVal + 'Ω';
+    if (kind === 'cap') return workingVal + 'F';
+    if (kind === 'ind') return workingVal + 'Hy';
+    return workingVal;
+}
+
+// "R=10K" → "10K". A value that is not written as that named parameter comes
+// back untouched, so a pot whose Value was typed as a bare "10K" still formats.
+function stripParamName(val, name) {
+    const s = String(val).trim();
+    const eq = s.indexOf('=');
+    if (eq === -1) return s;
+    if (s.slice(0, eq).trim().toLowerCase() !== name.toLowerCase()) return s;
+    return s.slice(eq + 1).trim();
+}
+
+// ── Per-symbol text exceptions ─────────────────────────────────────────────
+//
+// A handful of symbols store an attribute whose raw form is not what belongs
+// on a printed sheet. Rather than growing a chain of `if (basename === …)`
+// inside getWindowText, each exception is one entry here: window index → a
+// function mapping the resolved attribute to the string to draw. An index with
+// no entry is left alone, so a rule only overrides WHAT is printed for the
+// index it names — WHERE it is printed, and at what size, stays entirely in
+// component_defaults.js (tunable in the Window Tuner like every other label).
+//
+// Keys are symbolKey() values, i.e. lower-case basenames.
+const SYMBOL_TEXT_RULES = {
+    // pot — the TCLib potentiometer. It is an X-prefixed subcircuit, so
+    // LTSpice instantiates it as U1, U2, … and keeps its resistance in a named
+    // parameter; printed verbatim the sheet would read "U1" and "R=10K".
+    // On paper it should read exactly like a resistor:
+    //     InstName  U1      →  P1
+    //     Value     R=10K   →  10KΩ
+    // Value2 ("cur=.5") is deliberately NOT rewritten — it is a genuine
+    // parameter and prints as one, just smaller and off to one side (see the
+    // `pot` entry in component_defaults.js).
+    pot: {
+        // Only a letter-run followed by digits is renumbered (U1 → P1,
+        // X12 → P12). A deliberately named instance ("Rload") is left as typed.
+        0: (v) => v.replace(/^[A-Za-z]+(?=\d)/, 'P'),
+        3: (v) => formatPassiveValue('res', stripParamName(v, 'R')),
+    },
+};
+
 function getWindowText(sym, index) {
+    const text = rawWindowText(sym, index);
+    if (!text) return text;
+    const rule = SYMBOL_TEXT_RULES[symbolKey(sym.type)]?.[index];
+    return rule ? rule(text) : text;
+}
+
+// The attribute behind each window index, before any per-symbol exception.
+function rawWindowText(sym, index) {
     if (index === 0) return resolveAttrValue(sym, 'InstName');
     if (index === 3) {
         const basename = symbolKey(sym.type);
-        let val = TRANSISTOR_BASENAMES.has(basename)
+        const val = TRANSISTOR_BASENAMES.has(basename)
             ? (sym.attrs['Value'] || '')
             : resolveAttrValue(sym, 'Value');
 
         // Special formatting rules for res, cap, ind values (index 3)
-        if (['res', 'cap', 'ind'].includes(basename) && val) {
-            let workingVal = val.trim();
-
-            // A value written with LaTeX carries its own units, so the automatic
-            // suffix is not wanted: "$100\,\Omega$" would otherwise print the
-            // ohm sign twice, and "$4.7\,\mu F$" would come out as "µFF".
-            if (/[$\\]/.test(workingVal)) return val;
-
-            // Check if it's just the default placeholder letter; if so skip unit append
-            if ((basename === 'res' && workingVal.toUpperCase() === 'R') ||
-                (basename === 'cap' && workingVal.toUpperCase() === 'C') ||
-                (basename === 'ind' && workingVal.toUpperCase() === 'L')) {
-                return workingVal;
-            }
-
-            // Step 1: Remove trailing units from source (F, H, Hy) for cap/ind
-            if (basename === 'cap' && workingVal.toLowerCase().endsWith('f')) {
-                workingVal = workingVal.substring(0, workingVal.length - 1).trim();
-            } else if (basename === 'ind') {
-                if (workingVal.toLowerCase().endsWith('hy')) {
-                    workingVal = workingVal.substring(0, workingVal.length - 2).trim();
-                } else if (workingVal.toLowerCase().endsWith('h')) {
-                    workingVal = workingVal.substring(0, workingVal.length - 1).trim();
-                }
-            }
-
-            // Step 2: Handle suffixes (meg -> M, M/m -> m)
-            if (workingVal.toLowerCase().endsWith('meg')) {
-                workingVal = workingVal.substring(0, workingVal.length - 3) + 'M';
-            } else if (workingVal.toLowerCase().endsWith('m')) {
-                // Both 'M' and 'm' in LTSpice mean milli
-                workingVal = workingVal.substring(0, workingVal.length - 1) + 'm';
-            }
-
-            // Step 3: Append final units
-            if (basename === 'res') return workingVal + 'Ω';
-            if (basename === 'cap') return workingVal + 'F';
-            if (basename === 'ind') return workingVal + 'Hy';
-        }
+        if (['res', 'cap', 'ind'].includes(basename) && val) return formatPassiveValue(basename, val);
 
         return val;
     }
@@ -152,6 +208,104 @@ function getWindowText(sym, index) {
     if (index === 40) return resolveAttrValue(sym, 'SpiceLine2');
     if (index === 123) return resolveAttrValue(sym, 'Value2');
     return '';
+}
+
+// Resolves WHICH window labels a symbol shows, WHERE, and at what size — the
+// three-layer priority stack described at the draw site further down.
+//
+// It lives in its own function because TWO passes need the answer: the one that
+// draws the labels and the one that sizes the page. A label the page was not
+// sized for is a label hanging off the sheet, so the two must agree exactly —
+// and the only way to guarantee that is to ask the same code.
+function resolveEffectiveWindows(sym, overrideAnchors) {
+    const effectiveWindows = new Map();
+    const table = lookupComponentDefaults(symbolBasename(sym.type));
+    const useOverride = overrideAnchors && !!table;
+
+    if (useOverride) {
+        // Override mode: component_defaults.js is the COMPLETE contract.
+        // Only indexes explicitly listed there will be rendered.
+        // Intentionally omitting an index (e.g. 0/InstName) suppresses it.
+        const exactKey = sym.orientation;
+        const rotEquiv = sym.orientation.startsWith('M')
+            ? 'R' + sym.orientation.slice(1)
+            : sym.orientation;
+        const defaults = table[exactKey] || table[rotEquiv] || table['R0'];
+        if (defaults) {
+            for (const [idxStr, def] of Object.entries(defaults)) {
+                const idx = parseInt(idxStr);
+                let isHidden = false;
+
+                const asyWin = sym.asyData?.windows?.[idx];
+                if (asyWin && asyWin.isHidden) isHidden = true;
+
+                const ascWin = sym.windows.find(w => w.index === idx);
+                if (ascWin) isHidden = ascWin.isHidden;
+
+                // Size 2 is LTSpice's normal label size and stays the default;
+                // an entry may name its own (pot's "cur=" parameter is set in
+                // a smaller size so it reads as an annotation, not a value).
+                const fontSize = (typeof def.fontSize === 'number') ? def.fontSize : 2;
+                effectiveWindows.set(idx, { ox: def.ox, oy: def.oy, align: def.align, fontSize: fontSize, isHidden: isHidden });
+            }
+        }
+    } else {
+        // Normal mode: position-driven. Only windows with an explicitly defined
+        // position are added. No implicit defaults or (0,0) placeholders.
+
+        // Layer 1: ASY WINDOW positions (base)
+        if (sym.asyData && sym.asyData.windows) {
+            for (const [idxStr, asyWin] of Object.entries(sym.asyData.windows)) {
+                const idx = parseInt(idxStr);
+                effectiveWindows.set(idx, { ox: asyWin.ox, oy: asyWin.oy, align: asyWin.align, fontSize: asyWin.fontSize, isHidden: asyWin.isHidden });
+            }
+        }
+        // Layer 2: ASC explicit WINDOW lines override ASY positions (or add new ones)
+        for (const win of sym.windows) {
+            effectiveWindows.set(win.index, { ox: win.offsetX, oy: win.offsetY, align: win.alignment, fontSize: win.fontSize, isHidden: win.isHidden });
+        }
+    }
+
+    // Inductor special-case alignment override. Compare the basename, not the
+    // full type: a pathed reference such as Misc\ind (or a differently-cased
+    // one) used to skip this exception.
+    if (symbolKey(sym.type) === 'ind' && ['R0', 'R180', 'M0', 'M180'].includes(sym.orientation)) {
+        if (effectiveWindows.has(0)) effectiveWindows.get(0).align = 'Right';
+        if (effectiveWindows.has(3)) effectiveWindows.get(3).align = 'Right';
+    }
+
+    return effectiveWindows;
+}
+
+// The box a symbol's artwork occupies in its own LOCAL (pre-rotation) frame.
+// Built from the .asy geometry, which is what the ASY fallback draws and what
+// every skin SVG mirrors. Returns null when the .asy never resolved.
+function symbolLocalBox(graphics) {
+    if (!graphics) return null;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    const add = (x, y) => {
+        if (typeof x !== 'number' || typeof y !== 'number' || isNaN(x) || isNaN(y)) return;
+        x0 = Math.min(x0, x); y0 = Math.min(y0, y);
+        x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+    };
+    // Rectangles, circles and arcs are all stored as their own bounding box.
+    for (const l of graphics.lines || []) { add(l.x1, l.y1); add(l.x2, l.y2); }
+    for (const r of graphics.rectangles || []) { add(r.x1, r.y1); add(r.x2, r.y2); }
+    for (const c of graphics.circles || []) { add(c.x1, c.y1); add(c.x2, c.y2); }
+    for (const a of graphics.arcs || []) { add(a.x1, a.y1); add(a.x2, a.y2); }
+    for (const p of graphics.pins || []) add(p.x, p.y);
+    for (const t of graphics.texts || []) add(t.x, t.y);
+    return x0 === Infinity ? null : { x0, y0, x1, y1 };
+}
+
+// Same, from a skin SVG's viewBox — the artwork actually drawn when a skin is
+// in play, and the only size available for a symbol whose .asy did not resolve.
+function svgViewBoxLocalBox(svgText) {
+    const m = svgText && svgText.match(/viewBox="([^"]+)"/);
+    if (!m) return null;
+    const [vx, vy, vw, vh] = m[1].trim().split(/[\s,]+/).map(Number);
+    if (![vx, vy, vw, vh].every(Number.isFinite)) return null;
+    return { x0: vx, y0: vy, x1: vx + vw, y1: vy + vh };
 }
 
 function applyPdfLineStyle(doc, style) {
@@ -705,30 +859,19 @@ function drawSvgToPdf(doc, svgText, symX, symY, orientation, minX, minY, scale =
         const rgb = fillAttr && fillAttr !== 'none' ? hexToRgb(fillAttr) : [0, 0, 0];
         doc.setTextColor(rgb[0], rgb[1], rgb[2]);
 
-        const p = transformPoint(tx, ty);
-        // Rotate the glyphs with the symbol. jsPDF measures its `angle` option
-        // counter-clockwise, while angleRad is clockwise in screen coordinates.
-        const angleDeg = -angleRad * 180 / Math.PI;
-        drawSvgText(doc, content, p.x, p.y, align, fontPx, angleDeg);
-    }
-}
-
-// Places SVG text at its baseline anchor, honouring text-anchor and rotation.
-function drawSvgText(doc, text, x, y, align, ptSize, angleDeg) {
-    doc.setFontSize(ptSize);
-    const w = doc.getTextWidth(text);
-
-    let dx = 0;
-    if (align === 'Center') dx = -w / 2;
-    else if (align === 'Right') dx = -w;
-
-    if (angleDeg) {
-        const rad = -angleDeg * Math.PI / 180;
-        const rx = dx * Math.cos(rad);
-        const ry = dx * Math.sin(rad);
-        doc.text(text, x + rx, y + ry, { angle: angleDeg, align: 'left', baseline: 'alphabetic' });
-    } else {
-        doc.text(text, x + dx, y, { angle: 0, align: 'left', baseline: 'alphabetic' });
+        // Lettering inside a skin is lettering on the symbol, so it obeys the
+        // same rule as a .asy TEXT or a pin name: LTSpice never prints a label
+        // upside down or mirrored. It turns the ANCHOR through the symbol's
+        // orientation and then draws the glyphs either upright or rotated 90° —
+        // which is precisely what transformAlignment + drawLTSpiceText do.
+        // Spinning the glyphs by the raw symbol angle (what this did before) put
+        // them on their head at R180: the "k" of a flipped pot, for one.
+        //
+        // SVG anchors text on its BASELINE while drawLTSpiceText anchors on the
+        // vertical centre of the cell, so shift by (H/2 − A) = 0.3em first, in
+        // LOCAL space — before the rotation, so the shift turns with the symbol.
+        const p = transformPoint(tx, ty - fontPx * 0.3);
+        drawLTSpiceText(doc, content, p.x, p.y, transformAlignment(align, orientation), fontPx);
     }
 }
 
@@ -957,12 +1100,56 @@ function skinSvgFor(assets, key, seed, pins) {
 
     let out = svgText;
     try {
-        out = RoughPen.roughen(svgText, { pins: pins || [], seed: seed }).svg;
+        // Forward the same pen the wires use, or an assets.roughOptions override
+        // would thicken the wires and leave every symbol behind.
+        const opt = roughOptionsFor(assets) || {};
+        out = RoughPen.roughen(svgText,
+            Object.assign({}, opt, { pins: pins || [], seed: seed })).svg;
     } catch (e) {
         console.warn(`[SKIN] could not redraw ${key} freehand:`, e && e.message);
     }
     assets.roughCache.set(cacheKey, out);
     return out;
+}
+
+// The pen settings a rough render uses. assets.roughOptions is an override hook
+// for callers that want to tune without editing the module.
+function roughOptionsFor(assets) {
+    if (typeof RoughPen === 'undefined') return null;
+    if (!assets.roughOptions) return RoughPen.DEFAULTS;
+    const merged = {};
+    for (const k in RoughPen.DEFAULTS) merged[k] = RoughPen.DEFAULTS[k];
+    for (const k in assets.roughOptions) {
+        if (assets.roughOptions[k] !== undefined) merged[k] = assets.roughOptions[k];
+    }
+    return merged;
+}
+
+/**
+ * One wire, redrawn freehand, as the vertices of a polyline.
+ *
+ * BOTH ends are anchored, so they stay exactly where the .asc put them. That is
+ * not cosmetic: junction dots, flag placement and every symbol pin are
+ * positioned from the original wire coordinates, and all of them have to keep
+ * meeting the line. The anchor taper also means a wire shorter than about twice
+ * `lock` simply stays straight, which is right — nobody's hand wobbles over 8pt.
+ *
+ * Returns null if anything is unavailable, so the caller falls back to a
+ * straight line rather than dropping the wire.
+ */
+function roughWirePoints(x1, y1, x2, y2, seed, opt) {
+    if (!opt) return null;
+    try {
+        const rand = RoughPen.mulberry32(RoughPen.fnv1a(seed));
+        const warp = RoughPen.makeWarp(rand, opt.warp, opt.warpPeriod);
+        const ends = [[x1, y1], [x2, y2]];
+        const taper = RoughPen.makeTaper(ends, opt.lock);
+        const pts = RoughPen.penStroke(ends, rand, opt, warp, taper, false);
+        return pts && pts.length > 1 ? pts : null;
+    } catch (e) {
+        console.warn('[SKIN] could not redraw a wire freehand:', e && e.message);
+        return null;
+    }
 }
 
 async function convertSceneToPdf(scene, assets, filename = 'Schematic', options = {}) {
@@ -1043,9 +1230,57 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         }
     }
 
+    // A symbol covers whatever its artwork covers, turned through its
+    // orientation, plus the labels hanging off it. This used to be a flat
+    // `sym.x..sym.x+100` box, which is wrong twice over: a symbol wider or
+    // taller than 100 (the LF398 block is 256x224) spilled past the page, and
+    // at R180/R270 the artwork grows UP and LEFT of the anchor while the box
+    // still pointed down and right — so the box and the symbol barely
+    // overlapped. Half a component ended up off the sheet.
+    const expandSymbol = (sym) => {
+        if (isNaN(sym.x) || isNaN(sym.y)) return;
+
+        // Union of what the two draw paths can put on the page: the .asy
+        // geometry and, when a skin is in play, its viewBox.
+        const boxes = [symbolLocalBox(sym.asyData && sym.asyData.graphics)];
+        if (assets.svgStrings) {
+            boxes.push(svgViewBoxLocalBox(assets.svgStrings.get(symbolKey(sym.type))));
+        }
+        const known = boxes.filter(Boolean);
+        // Nothing resolved (no .asy, no skin): keep a box, but a symmetric one —
+        // without knowing the artwork, the anchor is as likely to sit at its
+        // centre as at a corner.
+        const local = known.length
+            ? {
+                x0: Math.min(...known.map(b => b.x0)), y0: Math.min(...known.map(b => b.y0)),
+                x1: Math.max(...known.map(b => b.x1)), y1: Math.max(...known.map(b => b.y1)),
+            }
+            : { x0: -100, y0: -100, x1: 100, y1: 100 };
+
+        for (const [lx, ly] of [[local.x0, local.y0], [local.x1, local.y0],
+                                [local.x1, local.y1], [local.x0, local.y1]]) {
+            const p = transformOffset(lx, ly, sym.orientation);
+            expand(sym.x + p.x, sym.y + p.y);
+        }
+
+        // The labels. Same resolution the draw loop uses, measured with the
+        // same approximation as a standalone TEXT.
+        for (const [idx, win] of resolveEffectiveWindows(sym, options.overrideAnchors)) {
+            if (win.isHidden) continue;
+            const content = getWindowText(sym, idx);
+            if (!content) continue;
+            const rotated = transformOffset(win.ox, win.oy, sym.orientation);
+            expandText({
+                x: sym.x + rotated.x, y: sym.y + rotated.y, content: content,
+                fontSize: win.fontSize,
+                alignment: transformAlignment(win.align, sym.orientation),
+            });
+        }
+    };
+
     if (minX === Infinity) {
         for (const w of scene.wires) { expand(w.x1, w.y1); expand(w.x2, w.y2); }
-        for (const sym of scene.symbols) { expand(sym.x, sym.y); expand(sym.x + 100, sym.y + 100); }
+        for (const sym of scene.symbols) { expandSymbol(sym); }
         for (const r of scene.rectangles) { expand(r.x1, r.y1); expand(r.x2, r.y2); }
         for (const l of scene.lines) { expand(l.x1, l.y1); expand(l.x2, l.y2); }
         for (const c of scene.circles) { expand(c.x1, c.y1); expand(c.x2, c.y2); }
@@ -1163,15 +1398,39 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
 
     const wirePointsCount = new Map();
 
+    // Only the procedural rough skin redraws wires; every other skin, and None,
+    // takes the straight-line path below exactly as before.
+    const wireOpt = assets.rough ? roughOptionsFor(assets) : null;
+
+    // One pen draws the whole sheet, wires included, so penWidth has to reach
+    // here too — the symbols already honour it and a wire at a different weight
+    // gives the hand away. Restored below so nothing downstream inherits it.
+    if (wireOpt && wireOpt.penWidth > 0) doc.setLineWidth(wireOpt.penWidth);
+
     for (const w of scene.wires) {
         if (isNaN(w.x1) || isNaN(w.y1) || isNaN(w.x2) || isNaN(w.y2)) continue;
-        doc.line(w.x1 - minX, w.y1 - minY, w.x2 - minX, w.y2 - minY);
-        
+
+        const rough = wireOpt && roughWirePoints(
+            w.x1 - minX, w.y1 - minY, w.x2 - minX, w.y2 - minY,
+            `wire|${w.x1},${w.y1}|${w.x2},${w.y2}`, wireOpt);
+
+        if (rough) {
+            const segments = [];
+            for (let i = 1; i < rough.length; i++) {
+                segments.push([rough[i][0] - rough[i - 1][0], rough[i][1] - rough[i - 1][1]]);
+            }
+            doc.lines(segments, rough[0][0], rough[0][1], [1, 1], 'S', false);
+        } else {
+            doc.line(w.x1 - minX, w.y1 - minY, w.x2 - minX, w.y2 - minY);
+        }
+
         const p1 = `${w.x1},${w.y1}`;
         const p2 = `${w.x2},${w.y2}`;
         wirePointsCount.set(p1, (wirePointsCount.get(p1) || 0) + 1);
         wirePointsCount.set(p2, (wirePointsCount.get(p2) || 0) + 1);
     }
+
+    if (wireOpt && wireOpt.penWidth > 0) doc.setLineWidth(1.5);
 
     // Draw an intersection dot for any coordinate shared by >= 3 wire endpoints
     if (assets.svgStrings && assets.svgStrings.has('intersection')) {
@@ -1203,7 +1462,6 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
     doc.setLineDashPattern([], 0); // Reset dash style
     for (const sym of scene.symbols) {
         doc.setLineDashPattern([], 0); // Reset for each symbol to prevent state leakage
-        const basename = symbolBasename(sym.type);
         const key = symbolKey(sym.type);
 
         // Build the ASY-space → PDF-space transform for this symbol.
@@ -1335,57 +1593,9 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         // Merely having a SYMATTR (e.g. InstName) is NOT sufficient — the component
         // must also declare a WINDOW position for that index.
 
-        const effectiveWindows = new Map();
-        const table = lookupComponentDefaults(basename);
-        const useOverride = options.overrideAnchors && !!table;
-
-        if (useOverride) {
-            // Override mode: component_defaults.js is the COMPLETE contract.
-            // Only indexes explicitly listed there will be rendered.
-            // Intentionally omitting an index (e.g. 0/InstName) suppresses it.
-            const exactKey = sym.orientation;
-            const rotEquiv = sym.orientation.startsWith('M')
-                ? 'R' + sym.orientation.slice(1)
-                : sym.orientation;
-            const defaults = table[exactKey] || table[rotEquiv] || table['R0'];
-            if (defaults) {
-                for (const [idxStr, def] of Object.entries(defaults)) {
-                    const idx = parseInt(idxStr);
-                    let isHidden = false;
-                    
-                    const asyWin = sym.asyData?.windows?.[idx];
-                    if (asyWin && asyWin.isHidden) isHidden = true;
-                    
-                    const ascWin = sym.windows.find(w => w.index === idx);
-                    if (ascWin) isHidden = ascWin.isHidden;
-
-                    effectiveWindows.set(idx, { ox: def.ox, oy: def.oy, align: def.align, fontSize: 2, isHidden: isHidden });
-                }
-            }
-        } else {
-            // Normal mode: position-driven. Only windows with an explicitly defined
-            // position are added. No implicit defaults or (0,0) placeholders.
-            
-            // Layer 1: ASY WINDOW positions (base)
-            if (sym.asyData && sym.asyData.windows) {
-                for (const [idxStr, asyWin] of Object.entries(sym.asyData.windows)) {
-                    const idx = parseInt(idxStr);
-                    effectiveWindows.set(idx, { ox: asyWin.ox, oy: asyWin.oy, align: asyWin.align, fontSize: asyWin.fontSize, isHidden: asyWin.isHidden });
-                }
-            }
-            // Layer 2: ASC explicit WINDOW lines override ASY positions (or add new ones)
-            for (const win of sym.windows) {
-                effectiveWindows.set(win.index, { ox: win.offsetX, oy: win.offsetY, align: win.alignment, fontSize: win.fontSize, isHidden: win.isHidden });
-            }
-        }
-
-        // --- Step 3: Inductor special-case alignment override ---
-        // Compare the basename, not the full type: a pathed reference such as
-        // Misc\ind (or a differently-cased one) used to skip this exception.
-        if (key === 'ind' && ['R0', 'R180', 'M0', 'M180'].includes(sym.orientation)) {
-            if (effectiveWindows.has(0)) effectiveWindows.get(0).align = 'Right';
-            if (effectiveWindows.has(3)) effectiveWindows.get(3).align = 'Right';
-        }
+        // (The resolution itself lives in resolveEffectiveWindows, because the
+        // bounds pass has to reach exactly the same answer to size the page.)
+        const effectiveWindows = resolveEffectiveWindows(sym, options.overrideAnchors);
 
         // --- Step 4: Render each window that has a non-empty text value ---
         for (const [idx, win] of effectiveWindows.entries()) {

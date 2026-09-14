@@ -95,8 +95,8 @@ function createTikzDoc(spec) {
 
     const body = [];
 
-    // Hidden jsPDF used ONLY to measure strings. drawLTSpiceText and drawSvgText
-    // resolve Center/Right/vertical alignment with doc.getTextWidth(), so the
+    // Hidden jsPDF used ONLY to measure strings. drawLTSpiceText resolves
+    // Center/Right/vertical alignment with doc.getTextWidth(), so the
     // .tex only lands text where the PDF does if the widths come from the same
     // font metrics. The preamble loads lmodern, the same family as the embedded
     // lmroman10, so LaTeX then sets it at the same width.

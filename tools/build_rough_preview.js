@@ -152,12 +152,35 @@ const template = fs.readFileSync(path.join(__dirname, 'rough_preview_template.ht
 const penSrc = fs.readFileSync(path.join(rootDir, 'engine', 'rough_pen.js'), 'utf8');
 const appSrc = fs.readFileSync(path.join(__dirname, 'rough_preview_app.js'), 'utf8');
 
+// The sheet draws through the SHIPPING renderer rather than letting the browser
+// interpret the SVG, so what you tune is what the PDF exports. pdf_renderer.js
+// loads standalone - it needs no other engine file - and pdf_canvas.js is the
+// Canvas2D stand-in for the jsPDF document it draws into.
+const rendererSrc = fs.readFileSync(path.join(rootDir, 'engine', 'pdf_renderer.js'), 'utf8');
+const canvasSrc = fs.readFileSync(path.join(__dirname, 'pdf_canvas.js'), 'utf8');
+
+// The literal DEFAULTS block, comments and all, so "Copy DEFAULTS" can hand back
+// something that pastes straight over it. Emitting just the slider values would
+// drop the eleven keys the sheet does not expose, along with every comment.
+const OPEN = 'var DEFAULTS = {';
+const defaultsStart = penSrc.indexOf(OPEN);
+const defaultsEnd = defaultsStart < 0 ? -1 : penSrc.indexOf('\n};', defaultsStart);
+if (defaultsStart < 0 || defaultsEnd < 0) {
+    console.error('\n  Could not find the DEFAULTS block in engine/rough_pen.js.');
+    console.error('  The sheet\'s "Copy DEFAULTS" button rebuilds that block verbatim.\n');
+    process.exit(1);
+}
+const defaultsSrc = penSrc.slice(defaultsStart, defaultsEnd + 3);
+
 // </script> anywhere inside inlined data would close the tag early.
 const safe = (s) => s.replace(/<\/script>/gi, '<\\/script>');
 
 const html = template
     .replace('/*__PEN__*/', () => safe(penSrc))
+    .replace('/*__RENDERER__*/', () => safe(rendererSrc))
+    .replace('/*__CANVAS__*/', () => safe(canvasSrc))
     .replace('/*__DATA__*/', () => safe(JSON.stringify(components)))
+    .replace('/*__DEFAULTS_SRC__*/', () => safe(JSON.stringify(defaultsSrc)))
     .replace('/*__APP__*/', () => safe(appSrc));
 
 fs.mkdirSync(outDir, { recursive: true });

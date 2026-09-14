@@ -57,13 +57,16 @@ function render(defaults) {
     out.push('Mirrored orientations (M0–M270) reuse the matching `Rxx` row and then apply');
     out.push('the mirror transform.');
     out.push('');
+    out.push('`Size` is the LTSpice font size index. It is 2 — the normal label size —');
+    out.push('unless an entry names its own `fontSize`.');
+    out.push('');
 
     for (const name of names) {
         const table = defaults[name];
         out.push(`#### \`${name}\``);
         out.push('');
-        out.push('| Orientation | Index | offsetX | offsetY | Alignment |');
-        out.push('|-------------|-------|---------|---------|-----------|');
+        out.push('| Orientation | Index | offsetX | offsetY | Alignment | Size |');
+        out.push('|-------------|-------|---------|---------|-----------|------|');
         for (const rot of ['R0', 'R90', 'R180', 'R270']) {
             const entry = table[rot];
             if (!entry) continue;
@@ -71,7 +74,8 @@ function render(defaults) {
             for (const idx of indexes) {
                 const d = entry[idx];
                 const label = WINDOW_LABELS[idx] ? ` (${WINDOW_LABELS[idx]})` : '';
-                out.push(`| ${rot} | ${idx}${label} | ${d.ox} | ${d.oy} | ${d.align} |`);
+                const size = (typeof d.fontSize === 'number') ? d.fontSize : 2;
+                out.push(`| ${rot} | ${idx}${label} | ${d.ox} | ${d.oy} | ${d.align} | ${size} |`);
             }
         }
         out.push('');

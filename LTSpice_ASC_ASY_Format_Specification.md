@@ -760,7 +760,7 @@ positions below are used.
 > `tools/generate_spec_defaults.js`. Do not edit it by hand — run the
 > generator instead, or CI will flag it as stale.
 
-Components with a defaults entry: **64**.
+Components with a defaults entry: **65**.
 
 **How to read these numbers.** `offsetX`/`offsetY`/`Alignment` are in the
 component's LOCAL (pre-rotation) frame, even inside a per-orientation row.
@@ -773,849 +773,869 @@ one after the transform.
 Mirrored orientations (M0–M270) reuse the matching `Rxx` row and then apply
 the mirror transform.
 
+`Size` is the LTSpice font size index. It is 2 — the normal label size —
+unless an entry names its own `fontSize`.
+
 #### `74HCU04 Not`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 14 | 22 | Left |
-| R0 | 3 (Value) | 14 | 106 | Left |
-| R90 | 0 (InstName) | 40 | 34 | VLeft |
-| R90 | 3 (Value) | 40 | 88 | VRight |
-| R180 | 0 (InstName) | 14 | 22 | Left |
-| R180 | 3 (Value) | 14 | 106 | Left |
-| R270 | 0 (InstName) | 40 | 34 | VLeft |
-| R270 | 3 (Value) | 40 | 88 | VRight |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 14 | 22 | Left | 2 |
+| R0 | 3 (Value) | 14 | 106 | Left | 2 |
+| R90 | 0 (InstName) | 40 | 34 | VLeft | 2 |
+| R90 | 3 (Value) | 40 | 88 | VRight | 2 |
+| R180 | 0 (InstName) | 14 | 22 | Left | 2 |
+| R180 | 3 (Value) | 14 | 106 | Left | 2 |
+| R270 | 0 (InstName) | 40 | 34 | VLeft | 2 |
+| R270 | 3 (Value) | 40 | 88 | VRight | 2 |
 
 #### `Amp_Current`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 18 | 17 | Left |
-| R0 | 3 (Value) | 18 | 94 | Left |
-| R90 | 0 (InstName) | 24 | 90 | VRight |
-| R90 | 3 (Value) | 24 | 22 | VLeft |
-| R180 | 0 (InstName) | 18 | 94 | Left |
-| R180 | 3 (Value) | 18 | 17 | Left |
-| R270 | 0 (InstName) | 24 | 20 | VLeft |
-| R270 | 3 (Value) | 24 | 90 | VRight |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 18 | 17 | Left | 2 |
+| R0 | 3 (Value) | 18 | 94 | Left | 2 |
+| R90 | 0 (InstName) | 24 | 90 | VRight | 2 |
+| R90 | 3 (Value) | 24 | 22 | VLeft | 2 |
+| R180 | 0 (InstName) | 18 | 94 | Left | 2 |
+| R180 | 3 (Value) | 18 | 17 | Left | 2 |
+| R270 | 0 (InstName) | 24 | 20 | VLeft | 2 |
+| R270 | 3 (Value) | 24 | 90 | VRight | 2 |
 
 #### `Amp_Transimpedance`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 18 | 17 | Left |
-| R0 | 3 (Value) | 18 | 94 | Left |
-| R90 | 0 (InstName) | 24 | 90 | VRight |
-| R90 | 3 (Value) | 24 | 22 | VLeft |
-| R180 | 0 (InstName) | 18 | 94 | Left |
-| R180 | 3 (Value) | 18 | 17 | Left |
-| R270 | 0 (InstName) | 24 | 20 | VLeft |
-| R270 | 3 (Value) | 24 | 90 | VRight |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 18 | 17 | Left | 2 |
+| R0 | 3 (Value) | 18 | 94 | Left | 2 |
+| R90 | 0 (InstName) | 24 | 90 | VRight | 2 |
+| R90 | 3 (Value) | 24 | 22 | VLeft | 2 |
+| R180 | 0 (InstName) | 18 | 94 | Left | 2 |
+| R180 | 3 (Value) | 18 | 17 | Left | 2 |
+| R270 | 0 (InstName) | 24 | 20 | VLeft | 2 |
+| R270 | 3 (Value) | 24 | 90 | VRight | 2 |
 
 #### `ampmeter`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 13 | 70 | Left |
-| R90 | 0 (InstName) | 24 | 56 | VRight |
-| R180 | 0 (InstName) | 13 | 70 | Left |
-| R270 | 0 (InstName) | 24 | 56 | VRight |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 13 | 70 | Left | 2 |
+| R90 | 0 (InstName) | 24 | 56 | VRight | 2 |
+| R180 | 0 (InstName) | 13 | 70 | Left | 2 |
+| R270 | 0 (InstName) | 24 | 56 | VRight | 2 |
 
 #### `arrow`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 3 (Value) | 26 | -9 | Bottom |
-| R90 | 3 (Value) | 26 | -9 | Bottom |
-| R180 | 3 (Value) | 26 | -9 | Bottom |
-| R270 | 3 (Value) | 26 | -9 | Bottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 3 (Value) | 26 | -9 | Bottom | 2 |
+| R90 | 3 (Value) | 26 | -9 | Bottom | 2 |
+| R180 | 3 (Value) | 26 | -9 | Bottom | 2 |
+| R270 | 3 (Value) | 26 | -9 | Bottom | 2 |
 
 #### `arrow_curve`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 3 (Value) | 71 | 59 | Left |
-| R90 | 3 (Value) | 65 | 57 | VTop |
-| R180 | 3 (Value) | 71 | 59 | Left |
-| R270 | 3 (Value) | 65 | 57 | VTop |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 3 (Value) | 71 | 59 | Left | 2 |
+| R90 | 3 (Value) | 65 | 57 | VTop | 2 |
+| R180 | 3 (Value) | 71 | 59 | Left | 2 |
+| R270 | 3 (Value) | 65 | 57 | VTop | 2 |
 
 #### `arrow_Z`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 3 (Value) | 32 | -14 | Right |
-| R90 | 3 (Value) | 27 | -14 | VLeft |
-| R180 | 3 (Value) | 32 | -14 | Right |
-| R270 | 3 (Value) | 27 | -14 | VLeft |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 3 (Value) | 32 | -14 | Right | 2 |
+| R90 | 3 (Value) | 27 | -14 | VLeft | 2 |
+| R180 | 3 (Value) | 32 | -14 | Right | 2 |
+| R270 | 3 (Value) | 27 | -14 | VLeft | 2 |
 
 #### `arrow_Z2`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 3 (Value) | -19 | 11 | Right |
-| R90 | 3 (Value) | -22 | 19 | VLeft |
-| R180 | 3 (Value) | -19 | 11 | Right |
-| R270 | 3 (Value) | -22 | 19 | VLeft |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 3 (Value) | -19 | 11 | Right | 2 |
+| R90 | 3 (Value) | -22 | 19 | VLeft | 2 |
+| R180 | 3 (Value) | -19 | 11 | Right | 2 |
+| R270 | 3 (Value) | -22 | 19 | VLeft | 2 |
 
 #### `bi`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 26 | 0 | Left |
-| R0 | 3 (Value) | 26 | 80 | Left |
-| R90 | 0 (InstName) | -33 | 40 | VBottom |
-| R90 | 3 (Value) | 31 | 40 | VTop |
-| R180 | 0 (InstName) | 26 | 80 | Left |
-| R180 | 3 (Value) | 26 | 0 | Left |
-| R270 | 0 (InstName) | 31 | 40 | VTop |
-| R270 | 3 (Value) | -33 | 40 | VBottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 26 | 0 | Left | 2 |
+| R0 | 3 (Value) | 26 | 80 | Left | 2 |
+| R90 | 0 (InstName) | -33 | 40 | VBottom | 2 |
+| R90 | 3 (Value) | 31 | 40 | VTop | 2 |
+| R180 | 0 (InstName) | 26 | 80 | Left | 2 |
+| R180 | 3 (Value) | 26 | 0 | Left | 2 |
+| R270 | 0 (InstName) | 31 | 40 | VTop | 2 |
+| R270 | 3 (Value) | -33 | 40 | VBottom | 2 |
 
 #### `bi2`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 26 | 0 | Left |
-| R0 | 3 (Value) | 26 | 80 | Left |
-| R90 | 0 (InstName) | -33 | 40 | VBottom |
-| R90 | 3 (Value) | 31 | 40 | VTop |
-| R180 | 0 (InstName) | 26 | 80 | Left |
-| R180 | 3 (Value) | 26 | 0 | Left |
-| R270 | 0 (InstName) | 31 | 40 | VTop |
-| R270 | 3 (Value) | -33 | 40 | VBottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 26 | 0 | Left | 2 |
+| R0 | 3 (Value) | 26 | 80 | Left | 2 |
+| R90 | 0 (InstName) | -33 | 40 | VBottom | 2 |
+| R90 | 3 (Value) | 31 | 40 | VTop | 2 |
+| R180 | 0 (InstName) | 26 | 80 | Left | 2 |
+| R180 | 3 (Value) | 26 | 0 | Left | 2 |
+| R270 | 0 (InstName) | 31 | 40 | VTop | 2 |
+| R270 | 3 (Value) | -33 | 40 | VBottom | 2 |
 
 #### `bv`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 26 | 0 | Left |
-| R0 | 3 (Value) | 26 | 80 | Left |
-| R90 | 0 (InstName) | -33 | 40 | VBottom |
-| R90 | 3 (Value) | 31 | 40 | VTop |
-| R180 | 0 (InstName) | 26 | 80 | Left |
-| R180 | 3 (Value) | 26 | 0 | Left |
-| R270 | 0 (InstName) | 31 | 40 | VTop |
-| R270 | 3 (Value) | -33 | 40 | VBottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 26 | 0 | Left | 2 |
+| R0 | 3 (Value) | 26 | 80 | Left | 2 |
+| R90 | 0 (InstName) | -33 | 40 | VBottom | 2 |
+| R90 | 3 (Value) | 31 | 40 | VTop | 2 |
+| R180 | 0 (InstName) | 26 | 80 | Left | 2 |
+| R180 | 3 (Value) | 26 | 0 | Left | 2 |
+| R270 | 0 (InstName) | 31 | 40 | VTop | 2 |
+| R270 | 3 (Value) | -33 | 40 | VBottom | 2 |
 
 #### `cap`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 33 | 5 | Left |
-| R0 | 3 (Value) | 33 | 59 | Left |
-| R90 | 0 (InstName) | -11 | 32 | VBottom |
-| R90 | 3 (Value) | 40 | 32 | VTop |
-| R180 | 0 (InstName) | 33 | 56 | Left |
-| R180 | 3 (Value) | 33 | 6 | Left |
-| R270 | 0 (InstName) | 43 | 32 | VTop |
-| R270 | 3 (Value) | -8 | 32 | VBottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 33 | 5 | Left | 2 |
+| R0 | 3 (Value) | 33 | 59 | Left | 2 |
+| R90 | 0 (InstName) | -11 | 32 | VBottom | 2 |
+| R90 | 3 (Value) | 40 | 32 | VTop | 2 |
+| R180 | 0 (InstName) | 33 | 56 | Left | 2 |
+| R180 | 3 (Value) | 33 | 6 | Left | 2 |
+| R270 | 0 (InstName) | 43 | 32 | VTop | 2 |
+| R270 | 3 (Value) | -8 | 32 | VBottom | 2 |
 
 #### `cell`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 25 | 0 | Left |
-| R0 | 3 (Value) | 25 | 62 | Left |
-| R90 | 0 (InstName) | -44 | 30 | VBottom |
-| R90 | 3 (Value) | 40 | 30 | VTop |
-| R180 | 0 (InstName) | 25 | 62 | Left |
-| R180 | 3 (Value) | 25 | 0 | Left |
-| R270 | 0 (InstName) | -44 | 30 | VBottom |
-| R270 | 3 (Value) | 40 | 30 | VTop |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 25 | 0 | Left | 2 |
+| R0 | 3 (Value) | 25 | 62 | Left | 2 |
+| R90 | 0 (InstName) | -44 | 30 | VBottom | 2 |
+| R90 | 3 (Value) | 40 | 30 | VTop | 2 |
+| R180 | 0 (InstName) | 25 | 62 | Left | 2 |
+| R180 | 3 (Value) | 25 | 0 | Left | 2 |
+| R270 | 0 (InstName) | -44 | 30 | VBottom | 2 |
+| R270 | 3 (Value) | 40 | 30 | VTop | 2 |
 
 #### `current`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 26 | 0 | Left |
-| R0 | 3 (Value) | 26 | 80 | Left |
-| R90 | 0 (InstName) | -33 | 40 | VBottom |
-| R90 | 3 (Value) | 31 | 40 | VTop |
-| R180 | 0 (InstName) | 26 | 80 | Left |
-| R180 | 3 (Value) | 26 | 0 | Left |
-| R270 | 0 (InstName) | 31 | 40 | VTop |
-| R270 | 3 (Value) | -33 | 40 | VBottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 26 | 0 | Left | 2 |
+| R0 | 3 (Value) | 26 | 80 | Left | 2 |
+| R90 | 0 (InstName) | -33 | 40 | VBottom | 2 |
+| R90 | 3 (Value) | 31 | 40 | VTop | 2 |
+| R180 | 0 (InstName) | 26 | 80 | Left | 2 |
+| R180 | 3 (Value) | 26 | 0 | Left | 2 |
+| R270 | 0 (InstName) | 31 | 40 | VTop | 2 |
+| R270 | 3 (Value) | -33 | 40 | VBottom | 2 |
 
 #### `diode`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 32 | 0 | Left |
-| R0 | 3 (Value) | 32 | 64 | Left |
-| R90 | 0 (InstName) | -10 | 32 | VBottom |
-| R90 | 3 (Value) | 39 | 32 | VTop |
-| R180 | 0 (InstName) | 32 | 64 | Left |
-| R180 | 3 (Value) | 32 | 0 | Left |
-| R270 | 0 (InstName) | 41 | 32 | VTop |
-| R270 | 3 (Value) | -8 | 32 | VBottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 32 | 0 | Left | 2 |
+| R0 | 3 (Value) | 32 | 64 | Left | 2 |
+| R90 | 0 (InstName) | -10 | 32 | VBottom | 2 |
+| R90 | 3 (Value) | 39 | 32 | VTop | 2 |
+| R180 | 0 (InstName) | 32 | 64 | Left | 2 |
+| R180 | 3 (Value) | 32 | 0 | Left | 2 |
+| R270 | 0 (InstName) | 41 | 32 | VTop | 2 |
+| R270 | 3 (Value) | -8 | 32 | VBottom | 2 |
 
 #### `diode_45`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 43 | 49 | Left |
-| R0 | 3 (Value) | 43 | 72 | Left |
-| R90 | 0 (InstName) | 43 | 49 | VRight |
-| R90 | 3 (Value) | 66 | 49 | VRight |
-| R180 | 0 (InstName) | 43 | 49 | Left |
-| R180 | 3 (Value) | 43 | 72 | Left |
-| R270 | 0 (InstName) | 43 | 49 | VRight |
-| R270 | 3 (Value) | 66 | 49 | VRight |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 43 | 49 | Left | 2 |
+| R0 | 3 (Value) | 43 | 72 | Left | 2 |
+| R90 | 0 (InstName) | 43 | 49 | VRight | 2 |
+| R90 | 3 (Value) | 66 | 49 | VRight | 2 |
+| R180 | 0 (InstName) | 43 | 49 | Left | 2 |
+| R180 | 3 (Value) | 43 | 72 | Left | 2 |
+| R270 | 0 (InstName) | 43 | 49 | VRight | 2 |
+| R270 | 3 (Value) | 66 | 49 | VRight | 2 |
 
 #### `e`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 18 | 17 | Left |
-| R0 | 3 (Value) | 18 | 94 | Left |
-| R90 | 0 (InstName) | 24 | 90 | VRight |
-| R90 | 3 (Value) | 24 | 22 | VLeft |
-| R180 | 0 (InstName) | 18 | 94 | Left |
-| R180 | 3 (Value) | 18 | 17 | Left |
-| R270 | 0 (InstName) | 24 | 20 | VLeft |
-| R270 | 3 (Value) | 24 | 90 | VRight |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 18 | 17 | Left | 2 |
+| R0 | 3 (Value) | 18 | 94 | Left | 2 |
+| R90 | 0 (InstName) | 24 | 90 | VRight | 2 |
+| R90 | 3 (Value) | 24 | 22 | VLeft | 2 |
+| R180 | 0 (InstName) | 18 | 94 | Left | 2 |
+| R180 | 3 (Value) | 18 | 17 | Left | 2 |
+| R270 | 0 (InstName) | 24 | 20 | VLeft | 2 |
+| R270 | 3 (Value) | 24 | 90 | VRight | 2 |
 
 #### `e2`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 18 | 17 | Left |
-| R0 | 3 (Value) | 18 | 94 | Left |
-| R90 | 0 (InstName) | 24 | 90 | VRight |
-| R90 | 3 (Value) | 24 | 22 | VLeft |
-| R180 | 0 (InstName) | 18 | 94 | Left |
-| R180 | 3 (Value) | 18 | 17 | Left |
-| R270 | 0 (InstName) | 24 | 20 | VLeft |
-| R270 | 3 (Value) | 24 | 90 | VRight |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 18 | 17 | Left | 2 |
+| R0 | 3 (Value) | 18 | 94 | Left | 2 |
+| R90 | 0 (InstName) | 24 | 90 | VRight | 2 |
+| R90 | 3 (Value) | 24 | 22 | VLeft | 2 |
+| R180 | 0 (InstName) | 18 | 94 | Left | 2 |
+| R180 | 3 (Value) | 18 | 17 | Left | 2 |
+| R270 | 0 (InstName) | 24 | 20 | VLeft | 2 |
+| R270 | 3 (Value) | 24 | 90 | VRight | 2 |
 
 #### `f`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 26 | 0 | Left |
-| R0 | 3 (Value) | 26 | 80 | Left |
-| R90 | 0 (InstName) | -33 | 40 | VBottom |
-| R90 | 3 (Value) | 31 | 40 | VTop |
-| R180 | 0 (InstName) | 26 | 80 | Left |
-| R180 | 3 (Value) | 26 | 0 | Left |
-| R270 | 0 (InstName) | 31 | 40 | VTop |
-| R270 | 3 (Value) | -33 | 40 | VBottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 26 | 0 | Left | 2 |
+| R0 | 3 (Value) | 26 | 80 | Left | 2 |
+| R90 | 0 (InstName) | -33 | 40 | VBottom | 2 |
+| R90 | 3 (Value) | 31 | 40 | VTop | 2 |
+| R180 | 0 (InstName) | 26 | 80 | Left | 2 |
+| R180 | 3 (Value) | 26 | 0 | Left | 2 |
+| R270 | 0 (InstName) | 31 | 40 | VTop | 2 |
+| R270 | 3 (Value) | -33 | 40 | VBottom | 2 |
 
 #### `g`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 18 | 17 | Left |
-| R0 | 3 (Value) | 18 | 94 | Left |
-| R90 | 0 (InstName) | 24 | 90 | VRight |
-| R90 | 3 (Value) | 24 | 22 | VLeft |
-| R180 | 0 (InstName) | 18 | 94 | Left |
-| R180 | 3 (Value) | 18 | 17 | Left |
-| R270 | 0 (InstName) | 24 | 20 | VLeft |
-| R270 | 3 (Value) | 24 | 90 | VRight |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 18 | 17 | Left | 2 |
+| R0 | 3 (Value) | 18 | 94 | Left | 2 |
+| R90 | 0 (InstName) | 24 | 90 | VRight | 2 |
+| R90 | 3 (Value) | 24 | 22 | VLeft | 2 |
+| R180 | 0 (InstName) | 18 | 94 | Left | 2 |
+| R180 | 3 (Value) | 18 | 17 | Left | 2 |
+| R270 | 0 (InstName) | 24 | 20 | VLeft | 2 |
+| R270 | 3 (Value) | 24 | 90 | VRight | 2 |
 
 #### `g2`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 18 | 17 | Left |
-| R0 | 3 (Value) | 18 | 94 | Left |
-| R90 | 0 (InstName) | 24 | 90 | VRight |
-| R90 | 3 (Value) | 24 | 22 | VLeft |
-| R180 | 0 (InstName) | 18 | 94 | Left |
-| R180 | 3 (Value) | 18 | 17 | Left |
-| R270 | 0 (InstName) | 24 | 20 | VLeft |
-| R270 | 3 (Value) | 24 | 90 | VRight |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 18 | 17 | Left | 2 |
+| R0 | 3 (Value) | 18 | 94 | Left | 2 |
+| R90 | 0 (InstName) | 24 | 90 | VRight | 2 |
+| R90 | 3 (Value) | 24 | 22 | VLeft | 2 |
+| R180 | 0 (InstName) | 18 | 94 | Left | 2 |
+| R180 | 3 (Value) | 18 | 17 | Left | 2 |
+| R270 | 0 (InstName) | 24 | 20 | VLeft | 2 |
+| R270 | 3 (Value) | 24 | 90 | VRight | 2 |
 
 #### `Gain_Block`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 3 (Value) | -139 | 48 | Center |
-| R90 | 3 (Value) | -139 | 48 | Center |
-| R180 | 3 (Value) | -139 | 48 | Center |
-| R270 | 3 (Value) | -139 | 48 | Center |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 3 (Value) | -139 | 48 | Center | 2 |
+| R90 | 3 (Value) | -139 | 48 | Center | 2 |
+| R180 | 3 (Value) | -139 | 48 | Center | 2 |
+| R270 | 3 (Value) | -139 | 48 | Center | 2 |
 
 #### `h`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 26 | 17 | Left |
-| R0 | 3 (Value) | 26 | 97 | Left |
-| R90 | 0 (InstName) | -35 | 55 | VBottom |
-| R90 | 3 (Value) | 34 | 55 | VTop |
-| R180 | 0 (InstName) | 26 | 97 | Left |
-| R180 | 3 (Value) | 26 | 17 | Left |
-| R270 | 0 (InstName) | 34 | 55 | VTop |
-| R270 | 3 (Value) | -35 | 55 | VBottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 26 | 17 | Left | 2 |
+| R0 | 3 (Value) | 26 | 97 | Left | 2 |
+| R90 | 0 (InstName) | -35 | 55 | VBottom | 2 |
+| R90 | 3 (Value) | 34 | 55 | VTop | 2 |
+| R180 | 0 (InstName) | 26 | 97 | Left | 2 |
+| R180 | 3 (Value) | 26 | 17 | Left | 2 |
+| R270 | 0 (InstName) | 34 | 55 | VTop | 2 |
+| R270 | 3 (Value) | -35 | 55 | VBottom | 2 |
 
 #### `Ideal_Comp`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | -120 | 0 | Left |
-| R90 | 0 (InstName) | -102 | 9 | VLeft |
-| R180 | 0 (InstName) | -120 | 0 | Left |
-| R270 | 0 (InstName) | -102 | 9 | Left |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | -120 | 0 | Left | 2 |
+| R90 | 0 (InstName) | -102 | 9 | VLeft | 2 |
+| R180 | 0 (InstName) | -120 | 0 | Left | 2 |
+| R270 | 0 (InstName) | -102 | 9 | Left | 2 |
 
 #### `ind`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | -2 | 40 | Right |
-| R0 | 3 (Value) | -2 | 72 | Right |
-| R90 | 0 (InstName) | -2 | 56 | VBottom |
-| R90 | 3 (Value) | 37 | 56 | VTop |
-| R180 | 0 (InstName) | -2 | 72 | Right |
-| R180 | 3 (Value) | -2 | 40 | Right |
-| R270 | 0 (InstName) | 38 | 56 | VTop |
-| R270 | 3 (Value) | 1 | 56 | VBottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | -2 | 40 | Right | 2 |
+| R0 | 3 (Value) | -2 | 72 | Right | 2 |
+| R90 | 0 (InstName) | -2 | 56 | VBottom | 2 |
+| R90 | 3 (Value) | 37 | 56 | VTop | 2 |
+| R180 | 0 (InstName) | -2 | 72 | Right | 2 |
+| R180 | 3 (Value) | -2 | 40 | Right | 2 |
+| R270 | 0 (InstName) | 38 | 56 | VTop | 2 |
+| R270 | 3 (Value) | 1 | 56 | VBottom | 2 |
 
 #### `ind2`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | -2 | 40 | Right |
-| R0 | 3 (Value) | -2 | 72 | Right |
-| R90 | 0 (InstName) | -2 | 56 | VBottom |
-| R90 | 3 (Value) | 37 | 56 | VTop |
-| R180 | 0 (InstName) | -2 | 72 | Right |
-| R180 | 3 (Value) | -2 | 40 | Right |
-| R270 | 0 (InstName) | 38 | 56 | VTop |
-| R270 | 3 (Value) | 1 | 56 | VBottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | -2 | 40 | Right | 2 |
+| R0 | 3 (Value) | -2 | 72 | Right | 2 |
+| R90 | 0 (InstName) | -2 | 56 | VBottom | 2 |
+| R90 | 3 (Value) | 37 | 56 | VTop | 2 |
+| R180 | 0 (InstName) | -2 | 72 | Right | 2 |
+| R180 | 3 (Value) | -2 | 40 | Right | 2 |
+| R270 | 0 (InstName) | 38 | 56 | VTop | 2 |
+| R270 | 3 (Value) | 1 | 56 | VBottom | 2 |
 
 #### `L_Tap`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 45 | 165 | Left |
-| R0 | 3 (Value) | 45 | 68 | Left |
-| R0 | 123 (Value2) | 45 | 121 | Left |
-| R90 | 0 (InstName) | 40 | 183 | VRight |
-| R90 | 3 (Value) | 52 | 112 | VRight |
-| R90 | 123 (Value2) | 52 | 83 | VLeft |
-| R180 | 0 (InstName) | 45 | 165 | Left |
-| R180 | 3 (Value) | 45 | 121 | Left |
-| R180 | 123 (Value2) | 45 | 68 | Left |
-| R270 | 0 (InstName) | 40 | 183 | VRight |
-| R270 | 3 (Value) | 52 | 82 | VLeft |
-| R270 | 123 (Value2) | 52 | 112 | VRight |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 45 | 165 | Left | 2 |
+| R0 | 3 (Value) | 45 | 68 | Left | 2 |
+| R0 | 123 (Value2) | 45 | 121 | Left | 2 |
+| R90 | 0 (InstName) | 40 | 183 | VRight | 2 |
+| R90 | 3 (Value) | 52 | 112 | VRight | 2 |
+| R90 | 123 (Value2) | 52 | 83 | VLeft | 2 |
+| R180 | 0 (InstName) | 45 | 165 | Left | 2 |
+| R180 | 3 (Value) | 45 | 121 | Left | 2 |
+| R180 | 123 (Value2) | 45 | 68 | Left | 2 |
+| R270 | 0 (InstName) | 40 | 183 | VRight | 2 |
+| R270 | 3 (Value) | 52 | 82 | VLeft | 2 |
+| R270 | 123 (Value2) | 52 | 112 | VRight | 2 |
 
 #### `LF398`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | -109 | 85 | Left |
-| R0 | 3 (Value) | -109 | 14 | Left |
-| R90 | 0 (InstName) | -92 | 74 | VRight |
-| R90 | 3 (Value) | -92 | 19 | VLeft |
-| R180 | 0 (InstName) | -109 | 85 | Left |
-| R180 | 3 (Value) | -109 | 14 | Left |
-| R270 | 0 (InstName) | -92 | 74 | VRight |
-| R270 | 3 (Value) | -92 | 19 | VLeft |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | -109 | 85 | Left | 2 |
+| R0 | 3 (Value) | -109 | 14 | Left | 2 |
+| R90 | 0 (InstName) | -92 | 74 | VRight | 2 |
+| R90 | 3 (Value) | -92 | 19 | VLeft | 2 |
+| R180 | 0 (InstName) | -109 | 85 | Left | 2 |
+| R180 | 3 (Value) | -109 | 14 | Left | 2 |
+| R270 | 0 (InstName) | -92 | 74 | VRight | 2 |
+| R270 | 3 (Value) | -92 | 19 | VLeft | 2 |
 
 #### `LM311`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | -109 | 85 | Left |
-| R0 | 3 (Value) | -109 | 14 | Left |
-| R90 | 0 (InstName) | -92 | 74 | VRight |
-| R90 | 3 (Value) | -92 | 19 | VLeft |
-| R180 | 0 (InstName) | -109 | 85 | Left |
-| R180 | 3 (Value) | -109 | 14 | Left |
-| R270 | 0 (InstName) | -92 | 74 | VRight |
-| R270 | 3 (Value) | -92 | 19 | VLeft |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | -109 | 85 | Left | 2 |
+| R0 | 3 (Value) | -109 | 14 | Left | 2 |
+| R90 | 0 (InstName) | -92 | 74 | VRight | 2 |
+| R90 | 3 (Value) | -92 | 19 | VLeft | 2 |
+| R180 | 0 (InstName) | -109 | 85 | Left | 2 |
+| R180 | 3 (Value) | -109 | 14 | Left | 2 |
+| R270 | 0 (InstName) | -92 | 74 | VRight | 2 |
+| R270 | 3 (Value) | -92 | 19 | VLeft | 2 |
 
 #### `LM324`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | -109 | 85 | Left |
-| R0 | 3 (Value) | -109 | 14 | Left |
-| R90 | 0 (InstName) | -92 | 74 | VRight |
-| R90 | 3 (Value) | -92 | 19 | VLeft |
-| R180 | 0 (InstName) | -109 | 85 | Left |
-| R180 | 3 (Value) | -109 | 14 | Left |
-| R270 | 0 (InstName) | -92 | 74 | VRight |
-| R270 | 3 (Value) | -92 | 19 | VLeft |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | -109 | 85 | Left | 2 |
+| R0 | 3 (Value) | -109 | 14 | Left | 2 |
+| R90 | 0 (InstName) | -92 | 74 | VRight | 2 |
+| R90 | 3 (Value) | -92 | 19 | VLeft | 2 |
+| R180 | 0 (InstName) | -109 | 85 | Left | 2 |
+| R180 | 3 (Value) | -109 | 14 | Left | 2 |
+| R270 | 0 (InstName) | -92 | 74 | VRight | 2 |
+| R270 | 3 (Value) | -92 | 19 | VLeft | 2 |
 
 #### `LM741`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | -109 | 85 | Left |
-| R0 | 3 (Value) | -109 | 14 | Left |
-| R90 | 0 (InstName) | -92 | 74 | VRight |
-| R90 | 3 (Value) | -92 | 19 | VLeft |
-| R180 | 0 (InstName) | -109 | 85 | Left |
-| R180 | 3 (Value) | -109 | 14 | Left |
-| R270 | 0 (InstName) | -92 | 74 | VRight |
-| R270 | 3 (Value) | -92 | 19 | VLeft |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | -109 | 85 | Left | 2 |
+| R0 | 3 (Value) | -109 | 14 | Left | 2 |
+| R90 | 0 (InstName) | -92 | 74 | VRight | 2 |
+| R90 | 3 (Value) | -92 | 19 | VLeft | 2 |
+| R180 | 0 (InstName) | -109 | 85 | Left | 2 |
+| R180 | 3 (Value) | -109 | 14 | Left | 2 |
+| R270 | 0 (InstName) | -92 | 74 | VRight | 2 |
+| R270 | 3 (Value) | -92 | 19 | VLeft | 2 |
 
 #### `LM833`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | -109 | 85 | Left |
-| R0 | 3 (Value) | -109 | 14 | Left |
-| R90 | 0 (InstName) | -92 | 74 | VRight |
-| R90 | 3 (Value) | -92 | 19 | VLeft |
-| R180 | 0 (InstName) | -109 | 85 | Left |
-| R180 | 3 (Value) | -109 | 14 | Left |
-| R270 | 0 (InstName) | -92 | 74 | VRight |
-| R270 | 3 (Value) | -92 | 19 | VLeft |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | -109 | 85 | Left | 2 |
+| R0 | 3 (Value) | -109 | 14 | Left | 2 |
+| R90 | 0 (InstName) | -92 | 74 | VRight | 2 |
+| R90 | 3 (Value) | -92 | 19 | VLeft | 2 |
+| R180 | 0 (InstName) | -109 | 85 | Left | 2 |
+| R180 | 3 (Value) | -109 | 14 | Left | 2 |
+| R270 | 0 (InstName) | -92 | 74 | VRight | 2 |
+| R270 | 3 (Value) | -92 | 19 | VLeft | 2 |
 
 #### `njf`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 75 | 48 | Right |
-| R0 | 3 (Value) | 56 | 101 | Left |
-| R90 | 0 (InstName) | 50 | 49 | VTop |
-| R90 | 3 (Value) | 81 | 49 | VTop |
-| R180 | 0 (InstName) | 75 | 48 | Right |
-| R180 | 3 (Value) | 56 | 101 | Left |
-| R270 | 0 (InstName) | 50 | 49 | VTop |
-| R270 | 3 (Value) | 81 | 49 | VTop |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 75 | 48 | Right | 2 |
+| R0 | 3 (Value) | 56 | 101 | Left | 2 |
+| R90 | 0 (InstName) | 50 | 49 | VTop | 2 |
+| R90 | 3 (Value) | 81 | 49 | VTop | 2 |
+| R180 | 0 (InstName) | 75 | 48 | Right | 2 |
+| R180 | 3 (Value) | 56 | 101 | Left | 2 |
+| R270 | 0 (InstName) | 50 | 49 | VTop | 2 |
+| R270 | 3 (Value) | 81 | 49 | VTop | 2 |
 
 #### `nm_nobulk`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 75 | 35 | Right |
-| R0 | 3 (Value) | 56 | 101 | Left |
-| R90 | 0 (InstName) | 50 | 49 | VTop |
-| R90 | 3 (Value) | 81 | 49 | VTop |
-| R180 | 0 (InstName) | 75 | 34 | Right |
-| R180 | 3 (Value) | 56 | 101 | Left |
-| R270 | 0 (InstName) | 53 | 49 | VTop |
-| R270 | 3 (Value) | 81 | 49 | VTop |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 75 | 35 | Right | 2 |
+| R0 | 3 (Value) | 56 | 101 | Left | 2 |
+| R90 | 0 (InstName) | 50 | 49 | VTop | 2 |
+| R90 | 3 (Value) | 81 | 49 | VTop | 2 |
+| R180 | 0 (InstName) | 75 | 34 | Right | 2 |
+| R180 | 3 (Value) | 56 | 101 | Left | 2 |
+| R270 | 0 (InstName) | 53 | 49 | VTop | 2 |
+| R270 | 3 (Value) | 81 | 49 | VTop | 2 |
 
 #### `nmos`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 75 | 35 | Right |
-| R0 | 3 (Value) | 56 | 101 | Left |
-| R90 | 0 (InstName) | 50 | 49 | VTop |
-| R90 | 3 (Value) | 81 | 49 | VTop |
-| R180 | 0 (InstName) | 75 | 34 | Right |
-| R180 | 3 (Value) | 56 | 101 | Left |
-| R270 | 0 (InstName) | 53 | 49 | VTop |
-| R270 | 3 (Value) | 81 | 49 | VTop |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 75 | 35 | Right | 2 |
+| R0 | 3 (Value) | 56 | 101 | Left | 2 |
+| R90 | 0 (InstName) | 50 | 49 | VTop | 2 |
+| R90 | 3 (Value) | 81 | 49 | VTop | 2 |
+| R180 | 0 (InstName) | 75 | 34 | Right | 2 |
+| R180 | 3 (Value) | 56 | 101 | Left | 2 |
+| R270 | 0 (InstName) | 53 | 49 | VTop | 2 |
+| R270 | 3 (Value) | 81 | 49 | VTop | 2 |
 
 #### `nmos4`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 75 | 35 | Right |
-| R0 | 3 (Value) | 56 | 101 | Left |
-| R90 | 0 (InstName) | 50 | 49 | VTop |
-| R90 | 3 (Value) | 81 | 49 | VTop |
-| R180 | 0 (InstName) | 75 | 34 | Right |
-| R180 | 3 (Value) | 56 | 101 | Left |
-| R270 | 0 (InstName) | 53 | 49 | VTop |
-| R270 | 3 (Value) | 81 | 49 | VTop |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 75 | 35 | Right | 2 |
+| R0 | 3 (Value) | 56 | 101 | Left | 2 |
+| R90 | 0 (InstName) | 50 | 49 | VTop | 2 |
+| R90 | 3 (Value) | 81 | 49 | VTop | 2 |
+| R180 | 0 (InstName) | 75 | 34 | Right | 2 |
+| R180 | 3 (Value) | 56 | 101 | Left | 2 |
+| R270 | 0 (InstName) | 53 | 49 | VTop | 2 |
+| R270 | 3 (Value) | 81 | 49 | VTop | 2 |
 
 #### `npn`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 91 | 48 | Right |
-| R0 | 3 (Value) | 74 | 101 | Left |
-| R90 | 0 (InstName) | 61 | 49 | VTop |
-| R90 | 3 (Value) | 96 | 49 | VTop |
-| R180 | 0 (InstName) | 91 | 48 | Right |
-| R180 | 3 (Value) | 74 | 101 | Left |
-| R270 | 0 (InstName) | 61 | 49 | VTop |
-| R270 | 3 (Value) | 96 | 49 | VTop |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 91 | 48 | Right | 2 |
+| R0 | 3 (Value) | 74 | 101 | Left | 2 |
+| R90 | 0 (InstName) | 61 | 49 | VTop | 2 |
+| R90 | 3 (Value) | 96 | 49 | VTop | 2 |
+| R180 | 0 (InstName) | 91 | 48 | Right | 2 |
+| R180 | 3 (Value) | 74 | 101 | Left | 2 |
+| R270 | 0 (InstName) | 61 | 49 | VTop | 2 |
+| R270 | 3 (Value) | 96 | 49 | VTop | 2 |
 
 #### `NPN_ideal`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 0 | 0 | Left |
-| R0 | 3 (Value) | 80 | -9 | Left |
-| R0 | 39 (SpiceLine) | 80 | 134 | Left |
-| R0 | 123 (Value2) | 80 | 106 | Left |
-| R90 | 0 (InstName) | 0 | 11 | VLeft |
-| R90 | 3 (Value) | 80 | -9 | VLeft |
-| R90 | 39 (SpiceLine) | 114 | 100 | VRight |
-| R90 | 123 (Value2) | 87 | 100 | VRight |
-| R180 | 0 (InstName) | 0 | 0 | Left |
-| R180 | 3 (Value) | 80 | -9 | Left |
-| R180 | 39 (SpiceLine) | 80 | 134 | Left |
-| R180 | 123 (Value2) | 80 | 106 | Left |
-| R270 | 0 (InstName) | 0 | 11 | VLeft |
-| R270 | 3 (Value) | 80 | -9 | VLeft |
-| R270 | 39 (SpiceLine) | 114 | 100 | VRight |
-| R270 | 123 (Value2) | 87 | 100 | VRight |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 0 | 0 | Left | 2 |
+| R0 | 3 (Value) | 80 | -9 | Left | 2 |
+| R0 | 39 (SpiceLine) | 80 | 134 | Left | 2 |
+| R0 | 123 (Value2) | 80 | 106 | Left | 2 |
+| R90 | 0 (InstName) | 0 | 11 | VLeft | 2 |
+| R90 | 3 (Value) | 80 | -9 | VLeft | 2 |
+| R90 | 39 (SpiceLine) | 114 | 100 | VRight | 2 |
+| R90 | 123 (Value2) | 87 | 100 | VRight | 2 |
+| R180 | 0 (InstName) | 0 | 0 | Left | 2 |
+| R180 | 3 (Value) | 80 | -9 | Left | 2 |
+| R180 | 39 (SpiceLine) | 80 | 134 | Left | 2 |
+| R180 | 123 (Value2) | 80 | 106 | Left | 2 |
+| R270 | 0 (InstName) | 0 | 11 | VLeft | 2 |
+| R270 | 3 (Value) | 80 | -9 | VLeft | 2 |
+| R270 | 39 (SpiceLine) | 114 | 100 | VRight | 2 |
+| R270 | 123 (Value2) | 87 | 100 | VRight | 2 |
 
 #### `OA_Ideal`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | -109 | 85 | Left |
-| R0 | 3 (Value) | -171 | 111 | Left |
-| R0 | 123 (Value2) | -171 | 136 | Left |
-| R90 | 0 (InstName) | -92 | 82 | VRight |
-| R90 | 3 (Value) | -119 | -12 | VLeft |
-| R90 | 123 (Value2) | -92 | 9 | VLeft |
-| R180 | 0 (InstName) | -109 | 85 | Left |
-| R180 | 3 (Value) | -171 | 111 | Left |
-| R180 | 123 (Value2) | -171 | 136 | Left |
-| R270 | 0 (InstName) | -92 | 82 | VRight |
-| R270 | 3 (Value) | -119 | -12 | VLeft |
-| R270 | 123 (Value2) | -92 | 9 | VLeft |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | -109 | 85 | Left | 2 |
+| R0 | 3 (Value) | -171 | 111 | Left | 2 |
+| R0 | 123 (Value2) | -171 | 136 | Left | 2 |
+| R90 | 0 (InstName) | -92 | 82 | VRight | 2 |
+| R90 | 3 (Value) | -119 | -12 | VLeft | 2 |
+| R90 | 123 (Value2) | -92 | 9 | VLeft | 2 |
+| R180 | 0 (InstName) | -109 | 85 | Left | 2 |
+| R180 | 3 (Value) | -171 | 111 | Left | 2 |
+| R180 | 123 (Value2) | -171 | 136 | Left | 2 |
+| R270 | 0 (InstName) | -92 | 82 | VRight | 2 |
+| R270 | 3 (Value) | -119 | -12 | VLeft | 2 |
+| R270 | 123 (Value2) | -92 | 9 | VLeft | 2 |
 
 #### `OA_param`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | -109 | 85 | Left |
-| R0 | 3 (Value) | -171 | 111 | Left |
-| R0 | 123 (Value2) | -171 | 136 | Left |
-| R90 | 0 (InstName) | -92 | 82 | VRight |
-| R90 | 3 (Value) | -119 | -12 | VLeft |
-| R90 | 123 (Value2) | -92 | 9 | VLeft |
-| R180 | 0 (InstName) | -109 | 85 | Left |
-| R180 | 3 (Value) | -171 | 111 | Left |
-| R180 | 123 (Value2) | -171 | 136 | Left |
-| R270 | 0 (InstName) | -92 | 82 | VRight |
-| R270 | 3 (Value) | -119 | -12 | VLeft |
-| R270 | 123 (Value2) | -92 | 9 | VLeft |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | -109 | 85 | Left | 2 |
+| R0 | 3 (Value) | -171 | 111 | Left | 2 |
+| R0 | 123 (Value2) | -171 | 136 | Left | 2 |
+| R90 | 0 (InstName) | -92 | 82 | VRight | 2 |
+| R90 | 3 (Value) | -119 | -12 | VLeft | 2 |
+| R90 | 123 (Value2) | -92 | 9 | VLeft | 2 |
+| R180 | 0 (InstName) | -109 | 85 | Left | 2 |
+| R180 | 3 (Value) | -171 | 111 | Left | 2 |
+| R180 | 123 (Value2) | -171 | 136 | Left | 2 |
+| R270 | 0 (InstName) | -92 | 82 | VRight | 2 |
+| R270 | 3 (Value) | -119 | -12 | VLeft | 2 |
+| R270 | 123 (Value2) | -92 | 9 | VLeft | 2 |
 
 #### `OA_Signal`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 221 | 39 | Left |
-| R0 | 3 (Value) | 36 | -42 | Left |
-| R0 | 39 (SpiceLine) | 110 | 33 | Left |
-| R0 | 123 (Value2) | 148 | -11 | Bottom |
-| R90 | 0 (InstName) | 237 | 35 | VRight |
-| R90 | 3 (Value) | 51 | -4 | VLeft |
-| R90 | 39 (SpiceLine) | 80 | -5 | VLeft |
-| R90 | 123 (Value2) | 149 | 12 | Top |
-| R180 | 0 (InstName) | 221 | 39 | Left |
-| R180 | 3 (Value) | 36 | -42 | Left |
-| R180 | 39 (SpiceLine) | 110 | 33 | Left |
-| R180 | 123 (Value2) | 148 | -11 | Bottom |
-| R270 | 0 (InstName) | 237 | 35 | VRight |
-| R270 | 3 (Value) | 51 | -4 | VLeft |
-| R270 | 39 (SpiceLine) | 80 | -5 | VLeft |
-| R270 | 123 (Value2) | 149 | 12 | Top |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 221 | 39 | Left | 2 |
+| R0 | 3 (Value) | 36 | -42 | Left | 2 |
+| R0 | 39 (SpiceLine) | 110 | 33 | Left | 2 |
+| R0 | 123 (Value2) | 148 | -11 | Bottom | 2 |
+| R90 | 0 (InstName) | 237 | 35 | VRight | 2 |
+| R90 | 3 (Value) | 51 | -4 | VLeft | 2 |
+| R90 | 39 (SpiceLine) | 80 | -5 | VLeft | 2 |
+| R90 | 123 (Value2) | 149 | 12 | Top | 2 |
+| R180 | 0 (InstName) | 221 | 39 | Left | 2 |
+| R180 | 3 (Value) | 36 | -42 | Left | 2 |
+| R180 | 39 (SpiceLine) | 110 | 33 | Left | 2 |
+| R180 | 123 (Value2) | 148 | -11 | Bottom | 2 |
+| R270 | 0 (InstName) | 237 | 35 | VRight | 2 |
+| R270 | 3 (Value) | 51 | -4 | VLeft | 2 |
+| R270 | 39 (SpiceLine) | 80 | -5 | VLeft | 2 |
+| R270 | 123 (Value2) | 149 | 12 | Top | 2 |
 
 #### `OA_Signal2`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 221 | 39 | Left |
-| R0 | 3 (Value) | 36 | -42 | Left |
-| R0 | 39 (SpiceLine) | 110 | 33 | Left |
-| R0 | 123 (Value2) | 148 | -11 | Bottom |
-| R90 | 0 (InstName) | 237 | 35 | VRight |
-| R90 | 3 (Value) | 51 | -4 | VLeft |
-| R90 | 39 (SpiceLine) | 80 | -5 | VLeft |
-| R90 | 123 (Value2) | 149 | 12 | Top |
-| R180 | 0 (InstName) | 221 | 39 | Left |
-| R180 | 3 (Value) | 36 | -42 | Left |
-| R180 | 39 (SpiceLine) | 110 | 33 | Left |
-| R180 | 123 (Value2) | 148 | -11 | Bottom |
-| R270 | 0 (InstName) | 237 | 35 | VRight |
-| R270 | 3 (Value) | 51 | -4 | VLeft |
-| R270 | 39 (SpiceLine) | 80 | -5 | VLeft |
-| R270 | 123 (Value2) | 149 | 12 | Top |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 221 | 39 | Left | 2 |
+| R0 | 3 (Value) | 36 | -42 | Left | 2 |
+| R0 | 39 (SpiceLine) | 110 | 33 | Left | 2 |
+| R0 | 123 (Value2) | 148 | -11 | Bottom | 2 |
+| R90 | 0 (InstName) | 237 | 35 | VRight | 2 |
+| R90 | 3 (Value) | 51 | -4 | VLeft | 2 |
+| R90 | 39 (SpiceLine) | 80 | -5 | VLeft | 2 |
+| R90 | 123 (Value2) | 149 | 12 | Top | 2 |
+| R180 | 0 (InstName) | 221 | 39 | Left | 2 |
+| R180 | 3 (Value) | 36 | -42 | Left | 2 |
+| R180 | 39 (SpiceLine) | 110 | 33 | Left | 2 |
+| R180 | 123 (Value2) | 148 | -11 | Bottom | 2 |
+| R270 | 0 (InstName) | 237 | 35 | VRight | 2 |
+| R270 | 3 (Value) | 51 | -4 | VLeft | 2 |
+| R270 | 39 (SpiceLine) | 80 | -5 | VLeft | 2 |
+| R270 | 123 (Value2) | 149 | 12 | Top | 2 |
 
 #### `pjf`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 75 | 48 | Right |
-| R0 | 3 (Value) | 56 | 101 | Left |
-| R90 | 0 (InstName) | 50 | 49 | VTop |
-| R90 | 3 (Value) | 81 | 49 | VTop |
-| R180 | 0 (InstName) | 75 | 48 | Right |
-| R180 | 3 (Value) | 56 | 101 | Left |
-| R270 | 0 (InstName) | 50 | 49 | VTop |
-| R270 | 3 (Value) | 81 | 49 | VTop |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 75 | 48 | Right | 2 |
+| R0 | 3 (Value) | 56 | 101 | Left | 2 |
+| R90 | 0 (InstName) | 50 | 49 | VTop | 2 |
+| R90 | 3 (Value) | 81 | 49 | VTop | 2 |
+| R180 | 0 (InstName) | 75 | 48 | Right | 2 |
+| R180 | 3 (Value) | 56 | 101 | Left | 2 |
+| R270 | 0 (InstName) | 50 | 49 | VTop | 2 |
+| R270 | 3 (Value) | 81 | 49 | VTop | 2 |
 
 #### `pm_nobulk`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 75 | 35 | Right |
-| R0 | 3 (Value) | 56 | 101 | Left |
-| R90 | 0 (InstName) | 50 | 49 | VTop |
-| R90 | 3 (Value) | 81 | 49 | VTop |
-| R180 | 0 (InstName) | 75 | 34 | Right |
-| R180 | 3 (Value) | 56 | 101 | Left |
-| R270 | 0 (InstName) | 53 | 49 | VTop |
-| R270 | 3 (Value) | 81 | 49 | VTop |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 75 | 35 | Right | 2 |
+| R0 | 3 (Value) | 56 | 101 | Left | 2 |
+| R90 | 0 (InstName) | 50 | 49 | VTop | 2 |
+| R90 | 3 (Value) | 81 | 49 | VTop | 2 |
+| R180 | 0 (InstName) | 75 | 34 | Right | 2 |
+| R180 | 3 (Value) | 56 | 101 | Left | 2 |
+| R270 | 0 (InstName) | 53 | 49 | VTop | 2 |
+| R270 | 3 (Value) | 81 | 49 | VTop | 2 |
 
 #### `pmos`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 75 | 35 | Right |
-| R0 | 3 (Value) | 56 | 101 | Left |
-| R90 | 0 (InstName) | 50 | 49 | VTop |
-| R90 | 3 (Value) | 81 | 49 | VTop |
-| R180 | 0 (InstName) | 75 | 34 | Right |
-| R180 | 3 (Value) | 56 | 101 | Left |
-| R270 | 0 (InstName) | 53 | 49 | VTop |
-| R270 | 3 (Value) | 81 | 49 | VTop |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 75 | 35 | Right | 2 |
+| R0 | 3 (Value) | 56 | 101 | Left | 2 |
+| R90 | 0 (InstName) | 50 | 49 | VTop | 2 |
+| R90 | 3 (Value) | 81 | 49 | VTop | 2 |
+| R180 | 0 (InstName) | 75 | 34 | Right | 2 |
+| R180 | 3 (Value) | 56 | 101 | Left | 2 |
+| R270 | 0 (InstName) | 53 | 49 | VTop | 2 |
+| R270 | 3 (Value) | 81 | 49 | VTop | 2 |
 
 #### `pmos4`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 75 | 35 | Right |
-| R0 | 3 (Value) | 56 | 101 | Left |
-| R90 | 0 (InstName) | 50 | 49 | VTop |
-| R90 | 3 (Value) | 81 | 49 | VTop |
-| R180 | 0 (InstName) | 75 | 34 | Right |
-| R180 | 3 (Value) | 56 | 101 | Left |
-| R270 | 0 (InstName) | 53 | 49 | VTop |
-| R270 | 3 (Value) | 81 | 49 | VTop |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 75 | 35 | Right | 2 |
+| R0 | 3 (Value) | 56 | 101 | Left | 2 |
+| R90 | 0 (InstName) | 50 | 49 | VTop | 2 |
+| R90 | 3 (Value) | 81 | 49 | VTop | 2 |
+| R180 | 0 (InstName) | 75 | 34 | Right | 2 |
+| R180 | 3 (Value) | 56 | 101 | Left | 2 |
+| R270 | 0 (InstName) | 53 | 49 | VTop | 2 |
+| R270 | 3 (Value) | 81 | 49 | VTop | 2 |
 
 #### `pnp`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 91 | 48 | Right |
-| R0 | 3 (Value) | 74 | 101 | Left |
-| R90 | 0 (InstName) | 61 | 49 | VTop |
-| R90 | 3 (Value) | 96 | 49 | VTop |
-| R180 | 0 (InstName) | 91 | 48 | Right |
-| R180 | 3 (Value) | 74 | 101 | Left |
-| R270 | 0 (InstName) | 61 | 49 | VTop |
-| R270 | 3 (Value) | 96 | 49 | VTop |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 91 | 48 | Right | 2 |
+| R0 | 3 (Value) | 74 | 101 | Left | 2 |
+| R90 | 0 (InstName) | 61 | 49 | VTop | 2 |
+| R90 | 3 (Value) | 96 | 49 | VTop | 2 |
+| R180 | 0 (InstName) | 91 | 48 | Right | 2 |
+| R180 | 3 (Value) | 74 | 101 | Left | 2 |
+| R270 | 0 (InstName) | 61 | 49 | VTop | 2 |
+| R270 | 3 (Value) | 96 | 49 | VTop | 2 |
 
 #### `PNP_ideal`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 0 | 0 | Left |
-| R0 | 3 (Value) | 80 | -9 | Left |
-| R0 | 39 (SpiceLine) | 80 | 134 | Left |
-| R0 | 123 (Value2) | 80 | 106 | Left |
-| R90 | 0 (InstName) | 0 | 11 | VLeft |
-| R90 | 3 (Value) | 80 | -9 | VLeft |
-| R90 | 39 (SpiceLine) | 114 | 100 | VRight |
-| R90 | 123 (Value2) | 87 | 100 | VRight |
-| R180 | 0 (InstName) | 0 | 0 | Left |
-| R180 | 3 (Value) | 80 | -9 | Left |
-| R180 | 39 (SpiceLine) | 80 | 134 | Left |
-| R180 | 123 (Value2) | 80 | 106 | Left |
-| R270 | 0 (InstName) | 0 | 11 | VLeft |
-| R270 | 3 (Value) | 80 | -9 | VLeft |
-| R270 | 39 (SpiceLine) | 114 | 100 | VRight |
-| R270 | 123 (Value2) | 87 | 100 | VRight |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 0 | 0 | Left | 2 |
+| R0 | 3 (Value) | 80 | -9 | Left | 2 |
+| R0 | 39 (SpiceLine) | 80 | 134 | Left | 2 |
+| R0 | 123 (Value2) | 80 | 106 | Left | 2 |
+| R90 | 0 (InstName) | 0 | 11 | VLeft | 2 |
+| R90 | 3 (Value) | 80 | -9 | VLeft | 2 |
+| R90 | 39 (SpiceLine) | 114 | 100 | VRight | 2 |
+| R90 | 123 (Value2) | 87 | 100 | VRight | 2 |
+| R180 | 0 (InstName) | 0 | 0 | Left | 2 |
+| R180 | 3 (Value) | 80 | -9 | Left | 2 |
+| R180 | 39 (SpiceLine) | 80 | 134 | Left | 2 |
+| R180 | 123 (Value2) | 80 | 106 | Left | 2 |
+| R270 | 0 (InstName) | 0 | 11 | VLeft | 2 |
+| R270 | 3 (Value) | 80 | -9 | VLeft | 2 |
+| R270 | 39 (SpiceLine) | 114 | 100 | VRight | 2 |
+| R270 | 123 (Value2) | 87 | 100 | VRight | 2 |
+
+#### `pot`
+
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | -3 | 40 | Right | 2 |
+| R0 | 3 (Value) | -3 | 76 | Right | 2 |
+| R0 | 123 (Value2) | 33 | 47 | Left | 1 |
+| R90 | 0 (InstName) | 43 | 55 | VLeft | 2 |
+| R90 | 3 (Value) | 2 | 57 | VBottom | 2 |
+| R90 | 123 (Value2) | 55 | 73 | VRight | 1 |
+| R180 | 0 (InstName) | -3 | 76 | Right | 2 |
+| R180 | 3 (Value) | -3 | 40 | Right | 2 |
+| R180 | 123 (Value2) | 33 | 47 | Left | 1 |
+| R270 | 0 (InstName) | 43 | 55 | VLeft | 2 |
+| R270 | 3 (Value) | 2 | 57 | VBottom | 2 |
+| R270 | 123 (Value2) | 55 | 73 | VRight | 1 |
 
 #### `res`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 36 | 40 | Left |
-| R0 | 3 (Value) | 36 | 76 | Left |
-| R90 | 0 (InstName) | 2 | 56 | VBottom |
-| R90 | 3 (Value) | 29 | 56 | VTop |
-| R180 | 0 (InstName) | 36 | 71 | Left |
-| R180 | 3 (Value) | 36 | 37 | Left |
-| R270 | 0 (InstName) | 30 | 56 | VTop |
-| R270 | 3 (Value) | 3 | 56 | VBottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 36 | 40 | Left | 2 |
+| R0 | 3 (Value) | 36 | 76 | Left | 2 |
+| R90 | 0 (InstName) | 2 | 56 | VBottom | 2 |
+| R90 | 3 (Value) | 29 | 56 | VTop | 2 |
+| R180 | 0 (InstName) | 36 | 71 | Left | 2 |
+| R180 | 3 (Value) | 36 | 37 | Left | 2 |
+| R270 | 0 (InstName) | 30 | 56 | VTop | 2 |
+| R270 | 3 (Value) | 3 | 56 | VBottom | 2 |
 
 #### `res_45`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 63 | 0 | Left |
-| R0 | 3 (Value) | 63 | 25 | Left |
-| R90 | 0 (InstName) | 63 | 25 | VLeft |
-| R90 | 3 (Value) | 88 | 25 | VLeft |
-| R180 | 0 (InstName) | 63 | 25 | Left |
-| R180 | 3 (Value) | 63 | 0 | Left |
-| R270 | 0 (InstName) | 88 | 25 | VLeft |
-| R270 | 3 (Value) | 63 | 25 | VLeft |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 63 | 0 | Left | 2 |
+| R0 | 3 (Value) | 63 | 25 | Left | 2 |
+| R90 | 0 (InstName) | 63 | 25 | VLeft | 2 |
+| R90 | 3 (Value) | 88 | 25 | VLeft | 2 |
+| R180 | 0 (InstName) | 63 | 25 | Left | 2 |
+| R180 | 3 (Value) | 63 | 0 | Left | 2 |
+| R270 | 0 (InstName) | 88 | 25 | VLeft | 2 |
+| R270 | 3 (Value) | 63 | 25 | VLeft | 2 |
 
 #### `res_45_spring`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 63 | 0 | Left |
-| R0 | 3 (Value) | 63 | 25 | Left |
-| R90 | 0 (InstName) | 63 | 25 | VLeft |
-| R90 | 3 (Value) | 88 | 25 | VLeft |
-| R180 | 0 (InstName) | 63 | 25 | Left |
-| R180 | 3 (Value) | 63 | 0 | Left |
-| R270 | 0 (InstName) | 88 | 25 | VLeft |
-| R270 | 3 (Value) | 63 | 25 | VLeft |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 63 | 0 | Left | 2 |
+| R0 | 3 (Value) | 63 | 25 | Left | 2 |
+| R90 | 0 (InstName) | 63 | 25 | VLeft | 2 |
+| R90 | 3 (Value) | 88 | 25 | VLeft | 2 |
+| R180 | 0 (InstName) | 63 | 25 | Left | 2 |
+| R180 | 3 (Value) | 63 | 0 | Left | 2 |
+| R270 | 0 (InstName) | 88 | 25 | VLeft | 2 |
+| R270 | 3 (Value) | 63 | 25 | VLeft | 2 |
 
 #### `res_60`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 73 | 30 | Left |
-| R0 | 3 (Value) | 73 | 56 | Left |
-| R90 | 0 (InstName) | 63 | 39 | VLeft |
-| R90 | 3 (Value) | 88 | 39 | VLeft |
-| R180 | 0 (InstName) | 73 | 56 | Left |
-| R180 | 3 (Value) | 73 | 30 | Left |
-| R270 | 0 (InstName) | 88 | 39 | VLeft |
-| R270 | 3 (Value) | 63 | 39 | VLeft |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 73 | 30 | Left | 2 |
+| R0 | 3 (Value) | 73 | 56 | Left | 2 |
+| R90 | 0 (InstName) | 63 | 39 | VLeft | 2 |
+| R90 | 3 (Value) | 88 | 39 | VLeft | 2 |
+| R180 | 0 (InstName) | 73 | 56 | Left | 2 |
+| R180 | 3 (Value) | 73 | 30 | Left | 2 |
+| R270 | 0 (InstName) | 88 | 39 | VLeft | 2 |
+| R270 | 3 (Value) | 63 | 39 | VLeft | 2 |
 
 #### `res_60_spring`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 73 | 30 | Left |
-| R0 | 3 (Value) | 73 | 56 | Left |
-| R90 | 0 (InstName) | 63 | 39 | VLeft |
-| R90 | 3 (Value) | 88 | 39 | VLeft |
-| R180 | 0 (InstName) | 73 | 56 | Left |
-| R180 | 3 (Value) | 73 | 30 | Left |
-| R270 | 0 (InstName) | 88 | 39 | VLeft |
-| R270 | 3 (Value) | 63 | 39 | VLeft |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 73 | 30 | Left | 2 |
+| R0 | 3 (Value) | 73 | 56 | Left | 2 |
+| R90 | 0 (InstName) | 63 | 39 | VLeft | 2 |
+| R90 | 3 (Value) | 88 | 39 | VLeft | 2 |
+| R180 | 0 (InstName) | 73 | 56 | Left | 2 |
+| R180 | 3 (Value) | 73 | 30 | Left | 2 |
+| R270 | 0 (InstName) | 88 | 39 | VLeft | 2 |
+| R270 | 3 (Value) | 63 | 39 | VLeft | 2 |
 
 #### `res_pipe`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 0 | 0 | Right |
-| R0 | 3 (Value) | 0 | 25 | Right |
-| R90 | 0 (InstName) | 0 | 0 | VLeft |
-| R90 | 3 (Value) | 25 | 0 | VLeft |
-| R180 | 0 (InstName) | 0 | 25 | Right |
-| R180 | 3 (Value) | 0 | 0 | Right |
-| R270 | 0 (InstName) | 25 | 0 | VLeft |
-| R270 | 3 (Value) | 0 | 0 | VLeft |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 0 | 0 | Right | 2 |
+| R0 | 3 (Value) | 0 | 25 | Right | 2 |
+| R90 | 0 (InstName) | 0 | 0 | VLeft | 2 |
+| R90 | 3 (Value) | 25 | 0 | VLeft | 2 |
+| R180 | 0 (InstName) | 0 | 25 | Right | 2 |
+| R180 | 3 (Value) | 0 | 0 | Right | 2 |
+| R270 | 0 (InstName) | 25 | 0 | VLeft | 2 |
+| R270 | 3 (Value) | 0 | 0 | VLeft | 2 |
 
 #### `res_rec`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 36 | 40 | Left |
-| R0 | 3 (Value) | 36 | 76 | Left |
-| R90 | 0 (InstName) | 2 | 56 | VBottom |
-| R90 | 3 (Value) | 29 | 56 | VTop |
-| R180 | 0 (InstName) | 36 | 71 | Left |
-| R180 | 3 (Value) | 36 | 37 | Left |
-| R270 | 0 (InstName) | 30 | 56 | VTop |
-| R270 | 3 (Value) | 3 | 56 | VBottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 36 | 40 | Left | 2 |
+| R0 | 3 (Value) | 36 | 76 | Left | 2 |
+| R90 | 0 (InstName) | 2 | 56 | VBottom | 2 |
+| R90 | 3 (Value) | 29 | 56 | VTop | 2 |
+| R180 | 0 (InstName) | 36 | 71 | Left | 2 |
+| R180 | 3 (Value) | 36 | 37 | Left | 2 |
+| R270 | 0 (InstName) | 30 | 56 | VTop | 2 |
+| R270 | 3 (Value) | 3 | 56 | VBottom | 2 |
 
 #### `res_spring`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 36 | 40 | Left |
-| R0 | 3 (Value) | 36 | 76 | Left |
-| R90 | 0 (InstName) | 2 | 56 | VBottom |
-| R90 | 3 (Value) | 29 | 56 | VTop |
-| R180 | 0 (InstName) | 36 | 71 | Left |
-| R180 | 3 (Value) | 36 | 37 | Left |
-| R270 | 0 (InstName) | 30 | 56 | VTop |
-| R270 | 3 (Value) | 3 | 56 | VBottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 36 | 40 | Left | 2 |
+| R0 | 3 (Value) | 36 | 76 | Left | 2 |
+| R90 | 0 (InstName) | 2 | 56 | VBottom | 2 |
+| R90 | 3 (Value) | 29 | 56 | VTop | 2 |
+| R180 | 0 (InstName) | 36 | 71 | Left | 2 |
+| R180 | 3 (Value) | 36 | 37 | Left | 2 |
+| R270 | 0 (InstName) | 30 | 56 | VTop | 2 |
+| R270 | 3 (Value) | 3 | 56 | VBottom | 2 |
 
 #### `res2`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 36 | 40 | Left |
-| R0 | 3 (Value) | 36 | 76 | Left |
-| R90 | 0 (InstName) | 2 | 56 | VBottom |
-| R90 | 3 (Value) | 29 | 56 | VTop |
-| R180 | 0 (InstName) | 36 | 71 | Left |
-| R180 | 3 (Value) | 36 | 37 | Left |
-| R270 | 0 (InstName) | 30 | 56 | VTop |
-| R270 | 3 (Value) | 3 | 56 | VBottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 36 | 40 | Left | 2 |
+| R0 | 3 (Value) | 36 | 76 | Left | 2 |
+| R90 | 0 (InstName) | 2 | 56 | VBottom | 2 |
+| R90 | 3 (Value) | 29 | 56 | VTop | 2 |
+| R180 | 0 (InstName) | 36 | 71 | Left | 2 |
+| R180 | 3 (Value) | 36 | 37 | Left | 2 |
+| R270 | 0 (InstName) | 30 | 56 | VTop | 2 |
+| R270 | 3 (Value) | 3 | 56 | VBottom | 2 |
 
 #### `schottky`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 32 | 0 | Left |
-| R0 | 3 (Value) | 32 | 64 | Left |
-| R90 | 0 (InstName) | -10 | 32 | VBottom |
-| R90 | 3 (Value) | 39 | 32 | VTop |
-| R180 | 0 (InstName) | 32 | 64 | Left |
-| R180 | 3 (Value) | 32 | 0 | Left |
-| R270 | 0 (InstName) | 41 | 32 | VTop |
-| R270 | 3 (Value) | -8 | 32 | VBottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 32 | 0 | Left | 2 |
+| R0 | 3 (Value) | 32 | 64 | Left | 2 |
+| R90 | 0 (InstName) | -10 | 32 | VBottom | 2 |
+| R90 | 3 (Value) | 39 | 32 | VTop | 2 |
+| R180 | 0 (InstName) | 32 | 64 | Left | 2 |
+| R180 | 3 (Value) | 32 | 0 | Left | 2 |
+| R270 | 0 (InstName) | 41 | 32 | VTop | 2 |
+| R270 | 3 (Value) | -8 | 32 | VBottom | 2 |
 
 #### `signal`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 24 | 16 | Left |
-| R0 | 3 (Value) | 24 | 104 | Left |
-| R90 | 0 (InstName) | -32 | 56 | VBottom |
-| R90 | 3 (Value) | 32 | 56 | VTop |
-| R180 | 0 (InstName) | 24 | 104 | Left |
-| R180 | 3 (Value) | 24 | 16 | Left |
-| R270 | 0 (InstName) | 32 | 56 | VTop |
-| R270 | 3 (Value) | -32 | 56 | VBottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 24 | 16 | Left | 2 |
+| R0 | 3 (Value) | 24 | 104 | Left | 2 |
+| R90 | 0 (InstName) | -32 | 56 | VBottom | 2 |
+| R90 | 3 (Value) | 32 | 56 | VTop | 2 |
+| R180 | 0 (InstName) | 24 | 104 | Left | 2 |
+| R180 | 3 (Value) | 24 | 16 | Left | 2 |
+| R270 | 0 (InstName) | 32 | 56 | VTop | 2 |
+| R270 | 3 (Value) | -32 | 56 | VBottom | 2 |
 
 #### `TL082`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | -109 | 85 | Left |
-| R0 | 3 (Value) | -109 | 14 | Left |
-| R90 | 0 (InstName) | -92 | 74 | VRight |
-| R90 | 3 (Value) | -92 | 19 | VLeft |
-| R180 | 0 (InstName) | -109 | 85 | Left |
-| R180 | 3 (Value) | -109 | 14 | Left |
-| R270 | 0 (InstName) | -92 | 74 | VRight |
-| R270 | 3 (Value) | -92 | 19 | VLeft |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | -109 | 85 | Left | 2 |
+| R0 | 3 (Value) | -109 | 14 | Left | 2 |
+| R90 | 0 (InstName) | -92 | 74 | VRight | 2 |
+| R90 | 3 (Value) | -92 | 19 | VLeft | 2 |
+| R180 | 0 (InstName) | -109 | 85 | Left | 2 |
+| R180 | 3 (Value) | -109 | 14 | Left | 2 |
+| R270 | 0 (InstName) | -92 | 74 | VRight | 2 |
+| R270 | 3 (Value) | -92 | 19 | VLeft | 2 |
 
 #### `Vcc`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 3 (Value) | 27 | 16 | Left |
-| R90 | 3 (Value) | 20 | 16 | VTop |
-| R180 | 3 (Value) | 27 | 16 | Left |
-| R270 | 3 (Value) | 22 | 16 | VTop |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 3 (Value) | 27 | 16 | Left | 2 |
+| R90 | 3 (Value) | 20 | 16 | VTop | 2 |
+| R180 | 3 (Value) | 27 | 16 | Left | 2 |
+| R270 | 3 (Value) | 22 | 16 | VTop | 2 |
 
 #### `voltage`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 24 | 16 | Left |
-| R0 | 3 (Value) | 24 | 96 | Left |
-| R90 | 0 (InstName) | -32 | 56 | VBottom |
-| R90 | 3 (Value) | 30 | 56 | VTop |
-| R180 | 0 (InstName) | 24 | 96 | Left |
-| R180 | 3 (Value) | 24 | 16 | Left |
-| R270 | 0 (InstName) | 32 | 56 | VTop |
-| R270 | 3 (Value) | -30 | 56 | VBottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 24 | 16 | Left | 2 |
+| R0 | 3 (Value) | 24 | 96 | Left | 2 |
+| R90 | 0 (InstName) | -32 | 56 | VBottom | 2 |
+| R90 | 3 (Value) | 30 | 56 | VTop | 2 |
+| R180 | 0 (InstName) | 24 | 96 | Left | 2 |
+| R180 | 3 (Value) | 24 | 16 | Left | 2 |
+| R270 | 0 (InstName) | 32 | 56 | VTop | 2 |
+| R270 | 3 (Value) | -30 | 56 | VBottom | 2 |
 
 #### `voltage2`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 24 | 16 | Left |
-| R0 | 3 (Value) | 24 | 96 | Left |
-| R90 | 0 (InstName) | -32 | 56 | VBottom |
-| R90 | 3 (Value) | 30 | 56 | VTop |
-| R180 | 0 (InstName) | 24 | 96 | Left |
-| R180 | 3 (Value) | 24 | 16 | Left |
-| R270 | 0 (InstName) | 32 | 56 | VTop |
-| R270 | 3 (Value) | -30 | 56 | VBottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 24 | 16 | Left | 2 |
+| R0 | 3 (Value) | 24 | 96 | Left | 2 |
+| R90 | 0 (InstName) | -32 | 56 | VBottom | 2 |
+| R90 | 3 (Value) | 30 | 56 | VTop | 2 |
+| R180 | 0 (InstName) | 24 | 96 | Left | 2 |
+| R180 | 3 (Value) | 24 | 16 | Left | 2 |
+| R270 | 0 (InstName) | 32 | 56 | VTop | 2 |
+| R270 | 3 (Value) | -30 | 56 | VBottom | 2 |
 
 #### `zener`
 
-| Orientation | Index | offsetX | offsetY | Alignment |
-|-------------|-------|---------|---------|-----------|
-| R0 | 0 (InstName) | 32 | 0 | Left |
-| R0 | 3 (Value) | 32 | 64 | Left |
-| R90 | 0 (InstName) | -10 | 32 | VBottom |
-| R90 | 3 (Value) | 39 | 32 | VTop |
-| R180 | 0 (InstName) | 32 | 64 | Left |
-| R180 | 3 (Value) | 32 | 0 | Left |
-| R270 | 0 (InstName) | 41 | 32 | VTop |
-| R270 | 3 (Value) | -8 | 32 | VBottom |
+| Orientation | Index | offsetX | offsetY | Alignment | Size |
+|-------------|-------|---------|---------|-----------|------|
+| R0 | 0 (InstName) | 32 | 0 | Left | 2 |
+| R0 | 3 (Value) | 32 | 64 | Left | 2 |
+| R90 | 0 (InstName) | -10 | 32 | VBottom | 2 |
+| R90 | 3 (Value) | 39 | 32 | VTop | 2 |
+| R180 | 0 (InstName) | 32 | 64 | Left | 2 |
+| R180 | 3 (Value) | 32 | 0 | Left | 2 |
+| R270 | 0 (InstName) | 41 | 32 | VTop | 2 |
+| R270 | 3 (Value) | -8 | 32 | VBottom | 2 |
 
 **Fall-through rule:** a component with no entry above uses the `WINDOW`
 lines from its own `.asy` file.

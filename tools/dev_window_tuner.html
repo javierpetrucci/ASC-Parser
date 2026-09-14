@@ -144,6 +144,11 @@
             min-width: 0;
         }
 
+        /* Font size index sits next to the alignment picker and stays narrow */
+        .inputs-row select.size-sel {
+            flex: 0 0 40px;
+        }
+
         /* ── Output ──────────────────────────────── */
         #output-section {
             border-top: 1px solid #2a2a35;
@@ -454,8 +459,14 @@
     <script src="../engine/parser.js"></script>
     <script src="../engine/analyzer.js"></script>
     <script src="../engine/component_defaults.js"></script>
+    <script src="../engine/rough_pen.js"></script>
     <script src="../engine/latex_text.js"></script>
     <script src="../engine/pdf_renderer.js"></script>
+    <script src="../engine/tikz_renderer.js"></script>
+    <!-- Same list, and the same order, as index.html. index.js is what defines
+         window.LTSpiceEngine, which this tool renders and reads defaults through;
+         without it every render threw before the first frame. -->
+    <script src="../engine/index.js"></script>
     <script src="dev_window_tuner.js"></script>
 </body>
 

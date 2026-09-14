@@ -21,6 +21,11 @@
  * (Rules 1 and 3 above are supported by the resolver but currently unused: no
  * entry is R0-only, and none defines all 8 keys explicitly.)
  *
+ * A window entry may also carry an optional `fontSize` (the LTSpice size index,
+ * 0–7). Omitted, it is 2 — the normal label size, which is what nearly every
+ * label wants. Name it only for a label that is deliberately not a normal one,
+ * such as a secondary parameter printed as a small annotation beside the value.
+ *
  * To populate / tune values, use the Window Tuner dev tool at:
  *   http://127.0.0.1:8000/tools/dev_window_tuner.html
  */
@@ -407,6 +412,29 @@ const COMPONENT_DEFAULTS = {
         R90: { 0: { ox: 40, oy: 183, align: 'VRight' }, 3: { ox: 52, oy: 112, align: 'VRight' }, 123: { ox: 52, oy: 83, align: 'VLeft' } },
         R180: { 0: { ox: 45, oy: 165, align: 'Left' }, 3: { ox: 45, oy: 121, align: 'Left' }, 123: { ox: 45, oy: 68, align: 'Left' } },
         R270: { 0: { ox: 40, oy: 183, align: 'VRight' }, 3: { ox: 52, oy: 82, align: 'VLeft' }, 123: { ox: 52, oy: 112, align: 'VRight' } },
+    },
+
+    // pot — a resistor body with a wiper arm, and it is meant to read as a
+    // resistor: indexes 0 and 3 reuse the `res` numbers, so "P1" and "10KΩ"
+    // land where "R1" and "10KΩ" would (the two rewrites are in
+    // SYMBOL_TEXT_RULES, engine/pdf_renderer.js).
+    //
+    // The one deviation is the value at R0, pushed out from x=36 to x=50: the
+    // symbol carries a small "k" labelling its wiper arrow at (38,81), which is
+    // exactly where a resistor's value starts. Only R0 (and the M0 mirrored
+    // from it) collide — in the other rotations the two land far apart.
+    //
+    // Index 123 is the wiper setting ("cur=.5"). It is an annotation rather
+    // than a value, so it is printed one size down and kept clear of both the
+    // wiper arm and the other two labels. With the symbol upright that is the
+    // far side of the body at the arm's own height (local y=64); lying down
+    // (R90/R270) the resistor numbers already centre both labels along the
+    // body, so it moves out past the end instead of stacking on top of them.
+    pot: {
+        R0: { 0: { ox: -3, oy: 40, align: 'Right' }, 3: { ox: -3, oy: 76, align: 'Right' }, 123: { ox: 33, oy: 47, align: 'Left', fontSize: 1 } },
+        R90: { 0: { ox: 43, oy: 55, align: 'VLeft' }, 3: { ox: 2, oy: 57, align: 'VBottom' }, 123: { ox: 55, oy: 73, align: 'VRight', fontSize: 1 } },
+        R180: { 0: { ox: -3, oy: 76, align: 'Right' }, 3: { ox: -3, oy: 40, align: 'Right' }, 123: { ox: 33, oy: 47, align: 'Left', fontSize: 1 } },
+        R270: { 0: { ox: 43, oy: 55, align: 'VLeft' }, 3: { ox: 2, oy: 57, align: 'VBottom' }, 123: { ox: 55, oy: 73, align: 'VRight', fontSize: 1 } },
     },
 
     Ideal_Comp: {

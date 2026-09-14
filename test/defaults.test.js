@@ -47,6 +47,13 @@ test('every window entry has numeric offsets and a known alignment', () => {
                 assert.ok(Number.isFinite(def.ox) && Number.isFinite(def.oy),
                     `${name}.${rot}[${idx}] has a non-finite offset`);
                 assert.ok(VALID.has(def.align), `${name}.${rot}[${idx}] has align "${def.align}"`);
+                // fontSize is optional (2 = normal when omitted), but a value
+                // outside the LTSpice size indexes falls back to a default at
+                // render time, silently ignoring what the table asked for.
+                if ('fontSize' in def) {
+                    assert.ok(Number.isInteger(def.fontSize) && def.fontSize >= 0 && def.fontSize <= 7,
+                        `${name}.${rot}[${idx}].fontSize is not a size index 0-7`);
+                }
             }
         }
     }

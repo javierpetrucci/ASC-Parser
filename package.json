@@ -10,6 +10,7 @@
     "spec:check": "node tools/generate_spec_defaults.js --check",
     "build:all": "node desktop/build_desktop.js --targets all",
     "components": "node tools/generate_component_list.js",
+    "preview": "node tools/build_rough_preview.js",
     "serve": "node tools/serve.js"
   },
   "dependencies": {}

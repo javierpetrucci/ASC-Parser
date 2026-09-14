@@ -198,6 +198,88 @@ test('skin artwork and the .asy fallback both produce output', async () => {
     assert.match(native, /Skin: ASY geometry/);
 });
 
+test('a pot prints as a resistor: P1, an ohm value, and a smaller wiper note', async () => {
+    // End to end on purpose: the value and the wiper setting live in pot.asy,
+    // not in the .asc, so this only passes if the symbol is resolved from disk
+    // and the per-symbol text rules run on what comes back.
+    const BS = String.fromCharCode(92);
+    const asc = [
+        'Version 4.1',
+        'SHEET 1 880 680',
+        `SYMBOL TCLib${BS}${BS}pot 100 100 R0`,
+        'SYMATTR InstName U1',
+        '',
+    ].join('\n');
+
+    const scene = parseAsc(asc);
+    await engine.analyzeSceneSymbols(scene);
+    assert.ok(scene.symbols[0].asyData, 'pot.asy did not resolve');
+
+    const tex = await convertSceneToTikz(scene, emptyAssets(), 'test', { overrideAnchors: true });
+
+    const node = (needle) => statements(tex).find((l) => l.includes(needle));
+
+    assert.ok(node('{P1}'), 'the instance name did not print as P1');
+    assert.ok(!tex.includes('{U1}'), 'the raw LTSpice instance name leaked onto the sheet');
+
+    const value = node('10K');
+    assert.ok(value, 'the resistance did not print');
+    assert.match(value, /textohm/, 'the resistance printed without its unit');
+    assert.ok(!tex.includes('R=10K'), 'the value printed with its parameter name');
+
+    // The wiper setting stays verbatim, one size down from the value (2 → 1).
+    const wiper = node('cur=.5');
+    assert.ok(wiper, 'the wiper setting did not print');
+    assert.match(wiper, /fontsize\{13bp\}/, 'the wiper setting is not one size smaller');
+    assert.match(value, /fontsize\{20bp\}/, 'the value is not at the normal label size');
+});
+
+test('lettering inside a skin obeys the same rules as a .asy TEXT', async () => {
+    // LTSpice never prints a label upside down or mirrored: it turns the anchor
+    // through the symbol's orientation and draws the glyphs upright or rotated
+    // 90°. Skin SVG text used to be spun by the raw symbol angle instead, so a
+    // pot at R180 printed its "k" on its head. The two paths that can draw that
+    // letter — the skin SVG and the .asy TEXT fallback — must agree exactly.
+    const BS = String.fromCharCode(92);
+    const at = (line) => (line.match(/at \((-?[\d.]+),(-?[\d.]+)\)/) || []).slice(1).map(Number);
+
+    // Measured against the instance name drawn on the same symbol, not in page
+    // coordinates: the page is sized from the artwork, and a skin's viewBox is
+    // not always the exact extent of the .asy geometry, so the two renders can
+    // legitimately land on pages of different sizes. What must match is where
+    // the letter sits ON THE SYMBOL.
+    const kOffset = async (ori, assets) => {
+        const asc = [
+            'Version 4.1', 'SHEET 1 880 680',
+            `SYMBOL TCLib${BS}${BS}pot 300 300 ${ori}`,
+            'SYMATTR InstName U1', '',
+        ].join('\n');
+        const scene = parseAsc(asc);
+        await engine.analyzeSceneSymbols(scene);
+        const tex = await convertSceneToTikz(scene, assets, 'test', { overrideAnchors: true });
+        assert.ok(!/rotate=180/.test(tex), `${ori}: something was drawn upside down`);
+
+        const line = tex.split('\n').find((l) => l.includes('{k}'));
+        assert.ok(line, `${ori}: the symbol's "k" did not print`);
+        const ref = tex.split('\n').find((l) => l.includes('{P1}'));
+        assert.ok(ref, `${ori}: the instance name did not print`);
+
+        const [kx, ky] = at(line);
+        const [rx, ry] = at(ref);
+        const rot = (line.match(/rotate=(-?[\d.]+)/) || [, '0'])[1];
+        const anchor = (line.match(/anchor=([a-z ]+)/) || [])[1];
+        return `offset=(${kx - rx},${ky - ry}) rot=${rot} anchor=${anchor}`;
+    };
+
+    const skinned = loadSkinAssets(['pot']);
+    assert.ok(skinned.svgStrings.has('pot'), 'fixture is missing the pot skin SVG');
+
+    for (const ori of ['R0', 'R90', 'R180', 'R270', 'M0', 'M90', 'M180', 'M270']) {
+        assert.strictEqual(await kOffset(ori, skinned), await kOffset(ori, emptyAssets()),
+            `${ori}: the skin puts the letter somewhere the .asy fallback does not`);
+    }
+});
+
 test('the PDF export is unaffected by the docFactory seam', async () => {
     const asc = example('01- Resistors and wires.asc');
     const pdf = await convertSceneToPdf(parseAsc(asc), emptyAssets(), 'test', { overrideAnchors: true });

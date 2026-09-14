@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // seeded per placement, so no two components come out identical.
                 const roughOption = document.createElement('option');
                 roughOption.value = ROUGH_SKIN;
-                roughOption.textContent = ROUGH_SKIN;
+                roughOption.textContent = 'Tremor';
                 skinSelector.appendChild(roughOption);
 
                 // Add a "None" option to fallback entirely to ASY rendering
