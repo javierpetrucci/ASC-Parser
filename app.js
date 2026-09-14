@@ -9,7 +9,7 @@ const pdfContainer = document.getElementById('pdf-container');
 const welcomeMsg = document.getElementById('welcome-msg');
 const statusMsg = document.getElementById('status-msg');
 const optCanvasRect = document.getElementById('opt-canvas-rect');
-const optDebugAnchors = document.getElementById('opt-debug-anchors');
+const optLatexAll = document.getElementById('opt-latex-all');
 const optOverrideAnchors = document.getElementById('opt-override-anchors');
 const skinSelector = document.getElementById('skin-selector');
 
@@ -80,8 +80,8 @@ if (optCanvasRect) {
     });
 }
 
-if (optDebugAnchors) {
-    optDebugAnchors.addEventListener('change', () => {
+if (optLatexAll) {
+    optLatexAll.addEventListener('change', () => {
         if (currentFileObj) processFile(currentFileObj);
     });
 }
@@ -304,6 +304,21 @@ async function prepareAssets(scene) {
     }
     assets.fontBase64 = window.cachedFontBase64;
 
+    // The maths face, for the glyphs lmroman10 does not carry — every lowercase
+    // Greek letter, and the relations and big operators. Only ~9 kB, and its
+    // absence just makes those commands print their own name.
+    if (!window.cachedMathFontBase64) {
+        try {
+            const mathRes = await fetch(`Assets/Fonts/lmmath-subset.ttf`);
+            if (mathRes.ok) {
+                window.cachedMathFontBase64 = arrayBufferToBase64(await mathRes.arrayBuffer());
+            } else {
+                console.warn('[LATEX] lmmath-subset.ttf not found — run: node tools/build_math_font.js');
+            }
+        } catch (e) { console.error('Error fetching math font:', e); }
+    }
+    assets.mathFontBase64 = window.cachedMathFontBase64;
+
     // Discover needed SVGs
     const neededTypes = new Set();
     neededTypes.add('intersection');
@@ -498,7 +513,10 @@ function hideStatus() {
 function readRenderOptions() {
     return {
         canvasBasedOnRectangle: optCanvasRect ? optCanvasRect.checked : false,
-        showTextAnchors: optDebugAnchors ? optDebugAnchors.checked : false,
+        // Off in the app, but the option stays in the engine — tools/dev_window_tuner.js
+        // still drives it, and it is the only way to see where a label is anchored.
+        showTextAnchors: false,
+        latexMode: optLatexAll && optLatexAll.checked ? 'all' : 'dollar',
         overrideAnchors: optOverrideAnchors ? optOverrideAnchors.checked : true
     };
 }
@@ -582,6 +600,12 @@ async function processFile(file) {
         currentPdfBlob = new File([pdfBytes], `${filename}.pdf`, { type: 'application/pdf' });
         currentRenderInput = { scene, assets, filename, options };
         setPdfViewer(URL.createObjectURL(currentPdfBlob));
+
+        // A mistyped LaTeX command used to produce quiet nonsense in the middle
+        // of a schematic. The reader's complaints now reach the user.
+        for (const w of (assets.latexWarnings || [])) {
+            consoleStage(mySequenceId, `  [LaTeX] ${w}`, 'err');
+        }
 
         consoleStage(mySequenceId, `[ OK ] done — ${filename}.pdf`, 'ok');
 

@@ -342,6 +342,38 @@ function createTikzDoc(spec) {
             return doc;
         },
 
+        // A label the user may have written LaTeX into. Unlike text(), this gets
+        // the raw source and the true anchor, so the markup goes to LaTeX
+        // untouched and TikZ does the measuring — which it can do better than
+        // anything here, since it is the one setting the glyphs.
+        drawLatexLabel(str, x, y, baseAlign, angleDeg, ptSize, mode) {
+            const spans = typeof latexSpans === 'function'
+                ? latexSpans(str, mode)
+                : [{ latex: false, text: String(str === undefined || str === null ? '' : str) }];
+
+            let content = '';
+            for (const s of spans) {
+                if (!s.text) continue;
+                content += s.latex ? '$' + s.text + '$' : texEscape(s.text);
+            }
+            if (!content) return doc;
+
+            const anchor = baseAlign === 'Right' ? 'base east'
+                         : (baseAlign === 'Center' || baseAlign === 'Top' || baseAlign === 'Bottom') ? 'base'
+                         : 'base west';
+
+            const size = tikzNum(ptSize);
+            const nodeOpts = ['anchor=' + anchor, 'inner sep=0pt', 'outer sep=0pt'];
+            if (angleDeg) nodeOpts.push('rotate=' + tikzNum(angleDeg));
+            const tc = colorSpec(state.textColor);
+            if (tc !== 'black') nodeOpts.push('text=' + tc);
+            nodeOpts.push('font=\\fontsize{' + size + 'bp}{' +
+                          tikzNum(ptSize * 1.2) + 'bp}\\selectfont');
+
+            body.push('  \\node[' + nodeOpts.join(', ') + '] at ' + pt(x, y) + ' {' + content + '};');
+            return doc;
+        },
+
         // ── Output ───────────────────────────────────────────────────────────
         // convertSceneToPdf ends with `return doc.output('arraybuffer')`; the
         // argument is meaningless here — the .tex source is the result.
@@ -362,6 +394,24 @@ function createTikzDoc(spec) {
                 '%     \\includestandalone{' + safeName + '}',
                 '%',
                 '% Lengths are in bp (PDF points), so this matches the PDF export 1:1.',
+            ];
+
+            // LaTeX markup is handed to LaTeX untouched, so a command this
+            // exporter does not recognise reaches it as-is. If it is a typo
+            // rather than something from a package, the compile stops with
+            // "Undefined control sequence" and no hint of where it came from.
+            const warnings = [...new Set(doc.__ltWarnings || [])];
+            if (warnings.length) {
+                head.push('%');
+                head.push('% AVISO: the LaTeX reader did not recognise the following. If a command');
+                head.push('% below is a typo, this file will NOT compile — fix it in the schematic.');
+                for (const w of warnings.slice(0, 20)) {
+                    head.push('%   ' + w.replace(/[\r\n]+/g, ' '));
+                }
+                if (warnings.length > 20) head.push('%   ... and ' + (warnings.length - 20) + ' more');
+            }
+
+            head.push(...[
                 '\\documentclass[border=0pt]{standalone}',
                 '\\usepackage[T1]{fontenc}',
                 '\\usepackage[utf8]{inputenc}',
@@ -373,7 +423,7 @@ function createTikzDoc(spec) {
                 // Pins the figure to exactly the page the PDF export produces,
                 // margins included, so both renderings crop identically.
                 '  \\useasboundingbox ' + pt(0, 0) + ' rectangle ' + pt(width, height) + ';',
-            ];
+            ]);
             const tail = [
                 '\\end{tikzpicture}',
                 '\\end{document}',

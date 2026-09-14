@@ -1,7 +1,25 @@
+// LTSpice doubles a literal backslash when it writes a .asc: a component placed
+// from Misc\signal is stored as "Misc\\signal", and a comment typed as
+// "\cdot" comes back as "\\cdot". Undoing that is what lets anything with a
+// backslash in it — a Windows path, or a LaTeX command — survive the round trip.
+//
+// The scan runs left to right so a doubled pair is consumed as a unit: "\\n"
+// becomes a literal backslash followed by "n", not LTSpice's newline escape.
+function unescapeAscText(raw) {
+    const s = String(raw === undefined || raw === null ? '' : raw);
+    if (s.indexOf('\\\\') === -1) return s;
+    let out = '';
+    for (let i = 0; i < s.length; i++) {
+        if (s[i] === '\\' && s[i + 1] === '\\') { out += '\\'; i++; }
+        else out += s[i];
+    }
+    return out;
+}
+
 // LTSpice writes a literal empty pair of quotes to represent an
 // explicitly-cleared attribute value.
 function normalizeAttrValue(raw) {
-    return raw === '""' ? '' : raw;
+    return raw === '""' ? '' : unescapeAscText(raw);
 }
 
 // Reduces a SYMBOL type token ("TCLib\\\\Special\\\\arrow") to its component name
@@ -107,7 +125,7 @@ function parseAsc(text) {
                 scene.flags.push({
                     x: parseFloat(parts[1]),
                     y: parseFloat(parts[2]),
-                    name: parts[3]
+                    name: unescapeAscText(parts[3])
                 });
             }
         } else if (type === 'TEXT') {
@@ -118,7 +136,7 @@ function parseAsc(text) {
                 const alignment = parts[3];
                 const fontSize = parseInt(parts[4]);
                 const contentIndex = line.indexOf(';');
-                const content = (contentIndex !== -1) ? line.substring(contentIndex + 1) : '';
+                const content = unescapeAscText((contentIndex !== -1) ? line.substring(contentIndex + 1) : '');
                 scene.texts.push({ x, y, alignment, fontSize, content });
             }
         } else if (type === 'RECTANGLE') {

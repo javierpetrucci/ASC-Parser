@@ -30,6 +30,7 @@
     <script src="engine/analyzer.js"></script>
     <script src="engine/component_defaults.js"></script>
     <script src="engine/rough_pen.js"></script>
+    <script src="engine/latex_text.js"></script>
     <script src="engine/pdf_renderer.js"></script>
     <script src="engine/tikz_renderer.js"></script>
     <script src="engine/index.js"></script>
@@ -95,10 +96,10 @@
                         data-tooltip="Determine the canvas size based on a circumscribing rectangle drawn in the schematic.">i</span>
                 </label>
                 <label class="checkbox-label">
-                    <input type="checkbox" id="opt-debug-anchors">
-                    Text Anchor Point
+                    <input type="checkbox" id="opt-latex-all">
+                    Render text as latex
                     <span class="help-btn"
-                        data-tooltip="Display actual text anchor points, for debugging purposes.">i</span>
+                        data-tooltip="By default only text between $...$ is typeset. With this on the whole field is. Pin names and symbol artwork are never interpreted.">i</span>
                 </label>
                 <label class=" checkbox-label">
                     <input type="checkbox" id="opt-override-anchors" checked>
@@ -149,7 +150,7 @@
             </div>
 
             <footer class="sidebar-footer">
-                <p>Créditos: Santiago López, Javier Petrucci.<br>
+                <p>Créditos: <span class="creators" tabindex="0">Santiago López, Javier Petrucci<img class="creators__photo" src="Assets/UI/Creators.png" alt="Santiago Lopez y Javier Petrucci" width="170" height="132"></span>.<br>
                     <a href="https://tc-ii.github.io" target="_blank" class="footer-link">TC-II</a> / ITBA
                 </p>
                 <p style="margin-top: 0.5rem;">
@@ -163,7 +164,7 @@
             <div id="welcome-msg">
                 <span class="term-line"><span class="term-prompt">$</span> ltspice_to_pdf --info</span>
                 <span class="term-line term-line--ok">Desarrollado por: </span>
-                <span class="term-line term-line--ok">Javier Petrucci y Santiago López</span>
+                <span class="term-line term-line--ok"><span class="creators" tabindex="0">Javier Petrucci y Santiago López<img class="creators__photo" src="Assets/UI/Creators.png" alt="Santiago Lopez y Javier Petrucci" width="170" height="132"></span></span>
                 <span class="term-line"><span class="term-prompt">$</span> show-specification</span>
                 <span class="term-line" style="margin-bottom: 0.4rem;">
                     <button id="view-spec-btn" class="inline-link-btn">Reverse Engineered ASC/ASY Format Specification</button>

@@ -588,6 +588,43 @@ body::after {
     transform: translateX(-85%) translateY(-5px);
 }
 
+/* ---- Creators photo ---- */
+/* Hovering the names shows who wrote this. The image ships in the DOM rather
+   than being swapped in on hover so it is already decoded when the pointer
+   arrives, instead of flashing in a frame late. */
+.creators {
+    position: relative;
+    cursor: help;
+    border-bottom: 1px dotted rgba(255, 179, 0, 0.35);
+}
+
+.creators__photo {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    display: block;
+    /* Narrower than the sidebar's content box: .sidebar clips on overflow-x,
+       and a wider photo would lose an edge down there. */
+    width: 170px;
+    height: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 2px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65), 0 0 14px var(--accent-glow);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-50%) translateY(4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 200;
+}
+
+/* :focus, not :focus-visible — the names carry a tabindex so the photo is
+   reachable without a mouse, and a tap or click should show it too. */
+.creators:hover .creators__photo,
+.creators:focus .creators__photo {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
 /* ---- Skin Dropdown ---- */
 #skin-selector {
     appearance: none;

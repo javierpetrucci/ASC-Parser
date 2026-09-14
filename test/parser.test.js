@@ -105,3 +105,54 @@ test('parseAsy reads windows, attrs and pins', () => {
     assert.strictEqual(d.graphics.pins.length, 1);
     assert.strictEqual(d.graphics.pins[0].attrs.PinName, 'C');
 });
+
+// ── LTSpice's backslash doubling ─────────────────────────────────────────────
+// LTSpice writes a literal backslash as two: a part placed from Misc\signal is
+// stored as "Misc\signal", and a comment typed as "\cdot" comes back as
+// "\cdot". Undoing that is what lets a LaTeX command survive the round trip —
+// without it every command reached the renderer doubled and unusable.
+
+test('a doubled backslash in TEXT is one backslash again', () => {
+    const asc = [
+        'Version 4',
+        'SHEET 1 880 680',
+        `TEXT 16 32 Left 2 ;$${BS}${BS}frac{1}{${BS}${BS}sqrt{2}}$`,
+    ].join('\n');
+    const scene = parseAsc(asc);
+    assert.strictEqual(scene.texts[0].content, `$${BS}frac{1}{${BS}sqrt{2}}$`);
+});
+
+test('a doubled backslash in a SYMATTR value is one backslash again', () => {
+    const asc = [
+        'Version 4',
+        'SHEET 1 880 680',
+        'SYMBOL res 100 100 R0',
+        `SYMATTR Value $100${BS}${BS},${BS}${BS}Omega$`,
+    ].join('\n');
+    const scene = parseAsc(asc);
+    assert.strictEqual(scene.symbols[0].attrs.Value, `$100${BS},${BS}Omega$`);
+});
+
+test('a doubled backslash in a FLAG name is one backslash again', () => {
+    const asc = ['Version 4', 'SHEET 1 880 680', `FLAG 16 32 $V_{${BS}${BS}alpha}$`].join('\n');
+    assert.strictEqual(parseAsc(asc).flags[0].name, `$V_{${BS}alpha}$`);
+});
+
+test('a single backslash is left exactly as it is', () => {
+    // Hand-written .asc files carry single backslashes, and they must not be
+    // mistaken for half of an escape pair.
+    const asc = ['Version 4', 'SHEET 1 880 680', `TEXT 16 32 Left 2 ;${BS}omega_0`].join('\n');
+    assert.strictEqual(parseAsc(asc).texts[0].content, `${BS}omega_0`);
+});
+
+test('the escape scan consumes a pair at a time', () => {
+    // "\n" is an escaped backslash followed by "n", not LTSpice's newline
+    // marker: a right-to-left or global replace would get this backwards.
+    const asc = ['Version 4', 'SHEET 1 880 680', `TEXT 16 32 Left 2 ;C:${BS}${BS}new${BS}${BS}${BS}${BS}dir`].join('\n');
+    assert.strictEqual(parseAsc(asc).texts[0].content, `C:${BS}new${BS}${BS}dir`);
+});
+
+test('an explicitly cleared attribute still reads as empty', () => {
+    // The empty-quote marker is checked before unescaping, not after.
+    assert.strictEqual(normalizeAttrValue('""'), '');
+});

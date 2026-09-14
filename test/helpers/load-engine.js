@@ -16,6 +16,7 @@ const ENGINE_FILES = [
     'engine/analyzer.js',
     'engine/component_defaults.js',
     'engine/rough_pen.js',
+    'engine/latex_text.js',
     'engine/pdf_renderer.js',
     'engine/tikz_renderer.js',
     'engine/index.js',
@@ -31,6 +32,7 @@ const EXPORTED = [
     'asyPathToUrlPath', 'pinAlignmentToTextAlignment',
     'drawSvgToPdf', 'drawLTSpiceText',
     'texEscape', 'tikzNum',
+    'parseLatexLabel', 'layoutLatexLabel', 'drawLatexBox', 'latexVisualLength', 'latexSpans', 'LATEX_SYMBOLS', 'mathItalicCodepoint', 'strokeOutline',
     'COMPONENT_DEFAULTS', 'TRANSISTOR_BASENAMES',
 ];
 

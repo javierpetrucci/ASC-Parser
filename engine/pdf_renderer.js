@@ -108,7 +108,12 @@ function getWindowText(sym, index) {
         // Special formatting rules for res, cap, ind values (index 3)
         if (['res', 'cap', 'ind'].includes(basename) && val) {
             let workingVal = val.trim();
-            
+
+            // A value written with LaTeX carries its own units, so the automatic
+            // suffix is not wanted: "$100\,\Omega$" would otherwise print the
+            // ohm sign twice, and "$4.7\,\mu F$" would come out as "µFF".
+            if (/[$\\]/.test(workingVal)) return val;
+
             // Check if it's just the default placeholder letter; if so skip unit append
             if ((basename === 'res' && workingVal.toUpperCase() === 'R') ||
                 (basename === 'cap' && workingVal.toUpperCase() === 'C') ||
@@ -778,42 +783,77 @@ function pinAlignmentToTextAlignment(pinAlign) {
     }
 }
 
-function drawLTSpiceText(doc, text, x, y, alignment, ptSize) {
+// Records what the LaTeX reader could not make sense of, against the label it
+// came from. Without this the reader's complaints went nowhere and a mistyped
+// command just produced quiet nonsense in the middle of a schematic.
+function noteLatexWarnings(doc, text, warnings) {
+    if (!warnings || warnings.length === 0) return;
+    if (!doc.__ltWarnings) doc.__ltWarnings = [];
+    const label = String(text).length > 40 ? String(text).slice(0, 37) + '...' : String(text);
+    for (const w of warnings) doc.__ltWarnings.push(`${w} — en "${label}"`);
+}
+
+// `mode` decides whether the label may carry LaTeX:
+//   'literal' — never (pin names, .asy artwork). The default, so every existing
+//               caller and every test keeps the exact behaviour it had.
+//   'dollar'  — only the spans between $...$
+//   'all'     — the whole label
+function drawLTSpiceText(doc, text, x, y, alignment, ptSize, mode = 'literal') {
     if (!text) return;
     doc.setFontSize(ptSize);
 
-    const w = doc.getTextWidth(text);
     // LTSpice (Windows GDI) bases vertical placement on standard font metrics.
     // We approximate standard vector proportions used by LTSpice:
-    const H = ptSize;        // Full cell height 
+    const H = ptSize;        // Full cell height
     const A = ptSize * 0.8;  // Ascent (Baseline offset from top)
     const isVertical = alignment.startsWith('V');
     const baseAlign = isVertical ? alignment.substring(1) : alignment;
 
-    let Lx, By; // Local X (Left edge) and Local Y (Baseline) BEFORE any rotation
-
-    // 1. Calculate Horizontal Anchor Local Coordinates (relative to anchor x, y)
-    if (baseAlign === 'Left') {
-        Lx = x;
-        By = y - H / 2 + A;
-    } else if (baseAlign === 'Right') {
-        Lx = x - w;
-        By = y - H / 2 + A;
-    } else if (baseAlign === 'Center') {
-        Lx = x - w / 2;
+    // 1a. The BASELINE, which never depends on the text width — only the
+    // horizontal placement below does. That split is what lets a document able
+    // to typeset for itself (the TikZ sink) take over the measuring: it gets an
+    // exact anchor point and picks the matching TikZ anchor.
+    let By;
+    if (baseAlign === 'Left' || baseAlign === 'Right' || baseAlign === 'Center') {
         By = y - H / 2 + A;
     } else if (baseAlign === 'Top') {
-        Lx = x - w / 2;
         //By = y + A; // GDI places anchor at cell Top
         By = y + A + (H * 0.225); // Manual offset to match spice position relative to component
     } else if (baseAlign === 'Bottom') {
-        Lx = x - w / 2;
         //By = y; // GDI uses TA_BASELINE for Bottom, anchor explicitly at Baseline
         By = y - (H * 0.225); //Manually increased baseline to match spice placement.
     } else {
-        Lx = x;
         By = y;
     }
+
+    if (mode !== 'literal' && typeof doc.drawLatexLabel === 'function') {
+        if (typeof parseLatexLabel === 'function') {
+            noteLatexWarnings(doc, text, parseLatexLabel(text, mode).warnings);
+        }
+        // Rotating the baseline point about the anchor drops the width term, so
+        // the point handed over is exact for every alignment.
+        const px = isVertical ? x + (By - y) : x;
+        const py = isVertical ? y : By;
+        doc.drawLatexLabel(text, px, py, baseAlign, isVertical ? 90 : 0, ptSize, mode);
+        return;
+    }
+
+    // Otherwise the label is laid out into a box before anything is drawn,
+    // because the alignment below needs the COMPOSED width. Measuring the raw
+    // string would misplace every Center/Right/vertical label the moment it
+    // carries markup: "$V_{CC}$" is 9 characters and about 3 wide.
+    const box = (mode !== 'literal' && typeof layoutLatexLabel === 'function')
+        ? layoutLatexLabel(doc, text, ptSize, mode)
+        : null;
+    if (box) noteLatexWarnings(doc, text, box.warnings);
+
+    const w = box ? box.width : doc.getTextWidth(text);
+
+    // 1b. Horizontal placement: the left edge, given the width.
+    let Lx;
+    if (baseAlign === 'Right') Lx = x - w;
+    else if (baseAlign === 'Center' || baseAlign === 'Top' || baseAlign === 'Bottom') Lx = x - w / 2;
+    else Lx = x; // Left, and anything unrecognised
 
     if (isVertical) {
         // 2. Rotate the calculated baseline point 90 degrees CCW AROUND the anchor (x,y)
@@ -828,9 +868,11 @@ function drawLTSpiceText(doc, text, x, y, alignment, ptSize) {
         const pdfX = x + rotX;
         const pdfY = y + rotY;
 
-        doc.text(text, pdfX, pdfY, { angle: 90, align: 'left', baseline: 'alphabetic' });
+        if (box) drawLatexBox(doc, box, pdfX, pdfY, 90);
+        else doc.text(text, pdfX, pdfY, { angle: 90, align: 'left', baseline: 'alphabetic' });
     } else {
-        doc.text(text, Lx, By, { angle: 0, align: 'left', baseline: 'alphabetic' });
+        if (box) drawLatexBox(doc, box, Lx, By, 0);
+        else doc.text(text, Lx, By, { angle: 0, align: 'left', baseline: 'alphabetic' });
     }
 }
 
@@ -926,6 +968,14 @@ function skinSvgFor(assets, key, seed, pins) {
 async function convertSceneToPdf(scene, assets, filename = 'Schematic', options = {}) {
     const optCanvasBasedOnRect = options.canvasBasedOnRectangle || false;
 
+    // 'literal' | 'dollar' | 'all' — how the labels the user types are read.
+    // Only reaches the fields written in the schematic; pin names and the .asy
+    // artwork stay literal because they belong to the symbol, not the sheet.
+    // Resolved up here because the bounds pass below already needs it.
+    const labelMode = options.latexMode === 'all' ? 'all'
+                    : options.latexMode === 'literal' ? 'literal'
+                    : 'dollar';
+
     // Resolve each symbol's .asy (cached and deduplicated by type)
     if (typeof analyzeSceneSymbols === 'function') {
         await analyzeSceneSymbols(scene);
@@ -947,7 +997,9 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
     const expandText = (t) => {
         if (isNaN(t.x) || isNaN(t.y)) return;
         const pt = BOUNDS_FONT_PT[t.fontSize] || 8;
-        const w = String(t.content || '').length * pt * 0.6;
+        const w = (typeof latexVisualLength === 'function'
+            ? latexVisualLength(t.content, labelMode)
+            : String(t.content || '').length) * pt * 0.6;
         const align = t.alignment || 'Left';
         const vertical = align.startsWith('V');
         const base = vertical ? align.slice(1) : align;
@@ -1038,6 +1090,22 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
         doc.addFont('lmroman10.ttf', 'LMRoman10-Regular', 'normal');
         doc.setFont('LMRoman10-Regular', 'normal'); // Required second parameter
     }
+
+    // The maths face, for the glyphs lmroman10 genuinely lacks — every lowercase
+    // Greek letter, and the relations and big operators. Built by
+    // tools/build_math_font.js. Optional: without it those commands fall back to
+    // showing their own name rather than an empty box.
+    if (assets.mathFontBase64) {
+        doc.addFileToVFS('lmmath.ttf', assets.mathFontBase64);
+        doc.addFont('lmmath.ttf', 'LMMath', 'normal');
+    }
+
+    // Which face is which, carried on the document so the label layout can
+    // switch between them without any module-level state going stale.
+    doc.__ltFonts = {
+        text: assets.fontBase64 ? 'LMRoman10-Regular' : null,
+        math: assets.mathFontBase64 ? 'LMMath' : null,
+    };
 
     // Set line width defaults
     doc.setLineWidth(2);
@@ -1338,7 +1406,7 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
             }
             doc.setTextColor(0, 0, 0);
 
-            drawLTSpiceText(doc, text, wx, wy, finalAlign, ptSize);
+            drawLTSpiceText(doc, text, wx, wy, finalAlign, ptSize, labelMode);
         }
     }
 
@@ -1356,7 +1424,7 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
             drawDebugSquare(doc, tx, ty);
         }
 
-        drawLTSpiceText(doc, t.content, tx, ty, t.alignment, ptSize);
+        drawLTSpiceText(doc, t.content, tx, ty, t.alignment, ptSize, labelMode);
     }
 
     // 7. Draw Flags
@@ -1394,7 +1462,7 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
                 const finalY = flag.y - minY + oy;
 
                 if (options.showTextAnchors) drawDebugSquare(doc, finalX, finalY);
-                drawLTSpiceText(doc, flag.name, finalX, finalY, align, 20);
+                drawLTSpiceText(doc, flag.name, finalX, finalY, align, 20, labelMode);
             }
         } else {
             // Native fallback for ASY/None skin
@@ -1438,12 +1506,20 @@ async function convertSceneToPdf(scene, assets, filename = 'Schematic', options 
                 else if (dir === 'right') { align = 'Right'; ox = -8; }
 
                 if (options.showTextAnchors) drawDebugSquare(doc, fx + ox, fy + oy);
-                drawLTSpiceText(doc, flag.name, fx + ox, fy + oy, align, 13);
+                drawLTSpiceText(doc, flag.name, fx + ox, fy + oy, align, 13, labelMode);
             }
         }
     }
 
     // 8. Build output byte array
+    // Surfaced through assets so the caller can show them: the UI prints them in
+    // the sidebar console, and they are visible in devtools either way.
+    const latexWarnings = [...new Set(doc.__ltWarnings || [])];
+    assets.latexWarnings = latexWarnings;
+    if (latexWarnings.length) {
+        console.warn('[LATEX] ' + latexWarnings.length + ' aviso(s):\n  ' + latexWarnings.join('\n  '));
+    }
+
     return doc.output('arraybuffer');
 }
 
