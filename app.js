@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Scroll console to bottom so the cursor line is visible on load
     if (consoleBox) consoleBox.scrollTop = consoleBox.scrollHeight;
 
-    if (!skinSelector) return;
+    if (!skinSelector) return openFromHash();
     try {
         const res = await fetch('Assets/Skins/skins.txt');
         if (res.ok) {
@@ -72,7 +72,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (e) {
         console.warn('Could not load skins.txt', e);
     }
+    // After the skins, so a schematic passed in the link renders with the chosen skin.
+    openFromHash();
 });
+
+// ── Schematic passed in the link ──────────────────────────────────
+// TurboSpice's "Exportar a PDF" opens this page as #c=<.asc, deflate-raw, base64url>&n=<name>,
+// the same format as its share links. The hash is never sent to any server.
+async function openFromHash() {
+    const params = new URLSearchParams(location.hash.replace(/^#/, ''));
+    const packed = params.get('c');
+    if (!packed) return;
+    // Cleared first, so reloading the page does not render it again.
+    history.replaceState(null, '', location.pathname + location.search);
+    try {
+        const b64 = atob(packed.replace(/-/g, '+').replace(/_/g, '/'));
+        const raw = Uint8Array.from(b64, (ch) => ch.charCodeAt(0));
+        const stream = new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+        const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+        let name = params.get('n') || 'schematic.asc';
+        if (!name.toLowerCase().endsWith('.asc')) name += '.asc';
+        processFile(new File([bytes], name));
+    } catch (e) {
+        console.warn('Could not read the schematic from the link', e);
+        showStatus('Could not open the link', 'The schematic in the link is damaged or incomplete.', true);
+    }
+}
+
+window.addEventListener('hashchange', openFromHash);
 
 if (optCanvasRect) {
     optCanvasRect.addEventListener('change', () => {
@@ -447,6 +474,10 @@ function decodeAscBytes(bytes, buffer) {
     } else if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) {
         encoding = 'utf-16be';
         offset = 2;
+    } else if (bytes.length >= 4 && bytes[0] !== 0 && bytes[1] === 0 && bytes[3] === 0) {
+        // UTF-16LE without a BOM, which is how LTspice saves files with non-Latin-1
+        // characters ("V\0e\0r\0s\0…"). Read as windows-1252 they parse to nothing.
+        encoding = 'utf-16le';
     } else if (isLikelyUtf8(bytes)) {
         // No BOM, but the byte pattern is valid multi-byte UTF-8 — decoding as
         // windows-1252 would turn accented net labels into mojibake.

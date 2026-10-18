@@ -29,6 +29,14 @@ test('a UTF-16LE BOM is detected and stripped', () => {
     assert.strictEqual(text, 'Version 4.1');
 });
 
+test('UTF-16LE without a BOM (as LTspice saves it) is detected', () => {
+    // LTspice switches to BOM-less UTF-16LE when a file has characters outside
+    // Latin-1 (τ, ≈…). Read as windows-1252 every token had NULs and nothing drew.
+    const { text, encoding } = decodeAscBytes(...input([...Buffer.from('Version 4\nTEXT 0 0 Left 2 ;τ = RC', 'utf16le')]));
+    assert.strictEqual(encoding, 'utf-16le');
+    assert.strictEqual(text, 'Version 4\nTEXT 0 0 Left 2 ;τ = RC');
+});
+
 test('a UTF-16BE BOM is detected instead of producing garbage', () => {
     const le = Buffer.from('Version', 'utf16le');
     const be = Buffer.alloc(le.length);
